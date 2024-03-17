@@ -18,7 +18,7 @@ function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPlu
   const api = useApi(streamyx, auth);
 
   const isValidUrl = (url: string) => new URL(url).host.includes('crunchyroll');
-  const init = async () => auth.signIn();
+  const init = () => auth.signIn();
 
   const getDrmConfig = async (assetId: string): Promise<DrmConfig> => {
     const options = buildDrmRequestOptions(assetId, auth.state.accountId || '');

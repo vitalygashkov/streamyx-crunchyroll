@@ -106,3 +106,5 @@ export const useAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
     },
   };
 };
+
+export type Auth = ReturnType<typeof useAuth>;
