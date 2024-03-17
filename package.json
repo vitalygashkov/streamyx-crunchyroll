@@ -6,7 +6,7 @@
   "main": "dist/crunchyroll.js",
   "types": "dist/crunchyroll.d.ts",
   "scripts": {
-    "postinstall": "npm run build",
+    "prepare": "npm run build",
     "build": "tsc"
   },
   "license": "ISC",
