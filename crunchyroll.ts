@@ -1,4 +1,4 @@
-import type { StreamyxInstance, DownloadConfig, DrmConfig, RunArgs } from '@streamyx/plugin';
+import type { StreamyxInstance, DownloadConfig, DrmConfig, RunArgs, PluginInstance } from '@streamyx/plugin';
 import type { CrunchyrollPluginOptions } from './lib/types';
 import { useAuth } from './lib/auth';
 import { useApi } from './lib/api';
@@ -13,7 +13,7 @@ const buildDrmRequestOptions = (assetId: string, accountId: string) => ({
   }),
 });
 
-function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPluginOptions) {
+function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPluginOptions): PluginInstance {
   const auth = useAuth(streamyx, options.configPath);
   const api = useApi(streamyx, auth);
 
