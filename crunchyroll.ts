@@ -1,4 +1,4 @@
-import type { StreamyxInstance, DownloadConfig, DrmConfig, RunArgs } from 'streamyx-plugin';
+import type { StreamyxInstance, DownloadConfig, DrmConfig, RunArgs } from '@streamyx/plugin';
 import type { CrunchyrollPluginOptions } from './lib/types';
 import { useAuth } from './lib/auth';
 import { useApi } from './lib/api';

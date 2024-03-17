@@ -1,4 +1,4 @@
-import type { StreamyxInstance } from 'streamyx-plugin';
+import type { StreamyxInstance } from '@streamyx/plugin';
 import type { AuthState, CmsAuthResponse } from './types';
 import { ROUTES } from './constants';
 
