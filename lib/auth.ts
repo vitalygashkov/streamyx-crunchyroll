@@ -1,7 +1,6 @@
 import type { StreamyxInstance } from 'streamyx-plugin';
-
+import type { AuthState, CmsAuthResponse } from './types';
 import { ROUTES } from './constants';
-import type { AuthState, CmsAuthResponse } from '../types';
 
 const HEADERS = {
   authorization: 'Basic b2VkYXJteHN0bGgxanZhd2ltbnE6OWxFaHZIWkpEMzJqdVY1ZFc5Vk9TNTdkb3BkSnBnbzE=',

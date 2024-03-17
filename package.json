@@ -4,7 +4,7 @@
   "author": "Vitaly Gashkov <vitalygashkov@vk.com>",
   "description": "Crunchyroll plugin for Streamyx",
   "main": "dist/crunchyroll.js",
-  "types": "dist/types/index.d.ts",
+  "types": "dist/crunchyroll.d.ts",
   "scripts": {
     "postinstall": "npm run build",
     "build": "tsc"

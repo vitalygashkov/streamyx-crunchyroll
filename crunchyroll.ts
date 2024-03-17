@@ -1,8 +1,7 @@
 import type { StreamyxInstance, DownloadConfig, DrmConfig, RunArgs } from 'streamyx-plugin';
-
+import type { CrunchyrollPluginOptions } from './lib/types';
 import { useAuth } from './lib/auth';
 import { useApi } from './lib/api';
-import type { CrunchyrollPluginOptions } from './types';
 
 const buildDrmRequestOptions = (assetId: string, accountId: string) => ({
   method: 'POST',

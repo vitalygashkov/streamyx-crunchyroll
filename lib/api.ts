@@ -1,8 +1,7 @@
 import type { StreamyxInstance } from 'streamyx-plugin';
-
+import type { Cms } from './types';
 import { ROUTES } from './constants';
 import { useAuth } from './auth';
-import type { Cms } from '../types';
 
 export const useApi = (streamyx: StreamyxInstance, auth: ReturnType<typeof useAuth>) => {
   const fetchData = async (url: string, json = true) => {
