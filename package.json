@@ -10,11 +10,11 @@
     "build": "tsc"
   },
   "license": "ISC",
-  "dependencies": {
-    "streamyx-plugin": "github:vitalygashkov/streamyx-plugin"
-  },
   "devDependencies": {
     "@types/node": "^20.11.28",
     "typescript": "^5.4.2"
+  },
+  "dependencies": {
+    "streamyx-plugin": "^0.0.1"
   }
 }
