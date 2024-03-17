@@ -15,6 +15,6 @@
     "typescript": "^5.4.2"
   },
   "dependencies": {
-    "streamyx-plugin": "^0.0.1"
+    "@streamyx/plugin": "^0.0.1"
   }
 }
