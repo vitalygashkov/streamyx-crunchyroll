@@ -60,7 +60,14 @@ export const useAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
         const response = await streamyx.http.fetch(ROUTES.token, options);
         const auth: any = await response.json();
         const error = auth.error || response.status !== 200;
-        if (!error) {
+        if (error) {
+          streamyx.log.error(
+            `Can't get token. Status code: ${response.status}. Message: ${auth.error}. Logging out...`
+          );
+          streamyx.log.debug(JSON.stringify(auth));
+          await this.signOut();
+          await this.signIn();
+        } else {
           const cmsAuth = await fetchCmsAuth(auth.access_token);
           const newState: AuthState = {
             accessToken: auth.access_token,
@@ -103,6 +110,11 @@ export const useAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
         streamyx.log.debug(`Refreshing token`);
         if (state.refreshToken) await this.fetchRefreshToken(state.refreshToken);
       }
+    },
+
+    async signOut() {
+      streamyx.http.setHeader('authorization', '');
+      await this.saveState({ accessToken: '', refreshToken: '', expires: 0, tokenType: '' });
     },
   };
 };
