@@ -10,5 +10,5 @@
     "strict": true,
     "esModuleInterop": true
   },
-  "include": ["./crunchyroll.ts", "src/**/*"]
+  "include": ["./crunchyroll.ts", "lib/**/*"]
 }
