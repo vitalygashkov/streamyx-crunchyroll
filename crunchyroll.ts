@@ -128,7 +128,7 @@ function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPlu
   const getEpisodesConfigBySeries = async (seriesId: string, args: RunArgs) => {
     const response = await api.fetchSeriesSeasons(seriesId);
     const seasons = filterSeasonsByNumber(response.data, args.seasons);
-    if (!seasons.length) {
+    if (!seasons?.length) {
       const seasonIds = response.data.map((s: any) => s.season_number).join(', ');
       streamyx.log.error(`No suitable seasons found. Available seasons: ${seasonIds}`);
       return [];
