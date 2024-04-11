@@ -3,7 +3,7 @@ import type { AuthState, CmsAuthResponse } from './types';
 import { ROUTES } from './constants';
 
 const HEADERS = {
-  authorization: 'Basic b2VkYXJteHN0bGgxanZhd2ltbnE6OWxFaHZIWkpEMzJqdVY1ZFc5Vk9TNTdkb3BkSnBnbzE=',
+  authorization: 'Basic bm12anNoZmtueW14eGtnN2ZiaDk6WllJVnJCV1VQYmNYRHRiRDIyVlNMYTZiNFdRb3Mzelg=',
   'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
 };
 
