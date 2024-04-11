@@ -1,9 +1,9 @@
 import type { StreamyxInstance } from '@streamyx/plugin';
 import type { AuthState, CmsAuthResponse } from './types';
-import { ROUTES } from './constants';
+import { BASIC_TOKEN, ROUTES } from './constants';
 
 const HEADERS = {
-  authorization: 'Basic bm12anNoZmtueW14eGtnN2ZiaDk6WllJVnJCV1VQYmNYRHRiRDIyVlNMYTZiNFdRb3Mzelg=',
+  authorization: `Basic ${BASIC_TOKEN}`,
   'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
 };
 
