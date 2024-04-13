@@ -165,7 +165,7 @@ function streamyxCrunchyroll(
     const episodes = filterEpisodesByNumber(allEpisodes, args.episodes);
     if (!episodes?.length) {
       const availableSeasons = seasons
-        .map((s: any) => `${s.season_number} (${getSeasonDubs(s)})`)
+        .map((s: any) => `S${s.season_number.toString().padStart(2, '0')} (${getSeasonDubs(s)})`)
         .join(', ');
       streamyx.log.error(`No suitable episodes found. Available seasons: ${availableSeasons}`);
       return [];
@@ -200,12 +200,18 @@ function streamyxCrunchyroll(
     const episodeId = url.split('watch/')[1]?.split('/')[0];
     const seriesId = url.split('series/')[1]?.split('/')[0];
     const configList: DownloadConfig[] = [];
-    if (episodeId) {
-      const episodeConfig = await getEpisodeConfig(episodeId, args);
-      configList.push(episodeConfig);
-    } else if (seriesId) {
-      const episodeConfigs = await getEpisodesConfigBySeries(seriesId, args);
-      configList.push(...episodeConfigs);
+
+    const langs = [...args.languages];
+    if (!langs.length) langs.push('ja-JP');
+    for (const lang of langs) {
+      args.languages = [lang];
+      if (episodeId) {
+        const episodeConfig = await getEpisodeConfig(episodeId, args);
+        configList.push(episodeConfig);
+      } else if (seriesId) {
+        const episodeConfigs = await getEpisodesConfigBySeries(seriesId, args);
+        configList.push(...episodeConfigs);
+      }
     }
     return configList;
   };
