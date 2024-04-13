@@ -127,7 +127,7 @@ function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPlu
 
   const getEpisodesConfigBySeries = async (seriesId: string, args: RunArgs) => {
     const response = await api.fetchSeriesSeasons(seriesId);
-    const seasons = filterSeasonsByNumber(response.data, args.seasons);
+    const seasons = filterSeasonsByNumber(response.data, args.episodes);
     if (!seasons?.length) {
       const seasonIds = response.data.map((s: any) => s.season_number).join(', ');
       streamyx.log.error(`No suitable seasons found. Available seasons: ${seasonIds}`);
@@ -155,9 +155,9 @@ function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPlu
     return getEpisodesConfig(episodeIds, args);
   };
 
-  const filterSeasonsByNumber = (seasons: any, selectedSeasons: number[]) => {
-    if (!selectedSeasons.length) return seasons;
-    return seasons.filter((season: any) => selectedSeasons.includes(season.season_number));
+  const filterSeasonsByNumber = (seasons: any, selectedSeasons: RunArgs['episodes']) => {
+    if (!selectedSeasons.size) return seasons;
+    return seasons.filter((season: any) => selectedSeasons.has(NaN, season.season_number));
   };
 
   const filterSeasonVersionsByAudio = (versions: any, selectedAudioLangs: string[]) => {
@@ -167,9 +167,9 @@ function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPlu
     return result;
   };
 
-  const filterEpisodesByNumber = (episodes: any, selectedEpisodes: number[]) => {
-    if (!selectedEpisodes.length) return episodes;
-    return episodes.filter((episode: any) => selectedEpisodes.includes(episode.episode_number));
+  const filterEpisodesByNumber = (episodes: any, selectedEpisodes: RunArgs['episodes']) => {
+    if (!selectedEpisodes.size) return episodes;
+    return episodes.filter((episode: any) => selectedEpisodes.has(episode.episode_number, episode.season_number));
   };
 
   const getConfigList = async (url: string, args: RunArgs): Promise<DownloadConfig[]> => {
