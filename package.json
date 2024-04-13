@@ -6,6 +6,7 @@
   "main": "dist/crunchyroll.js",
   "types": "dist/crunchyroll.d.ts",
   "scripts": {
+    "watch": "tsc --watch",
     "build": "tsc"
   },
   "license": "ISC",

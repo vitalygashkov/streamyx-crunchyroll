@@ -1,4 +1,10 @@
-import type { StreamyxInstance, DownloadConfig, DrmConfig, RunArgs, PluginInstance } from '@streamyx/plugin';
+import type {
+  StreamyxInstance,
+  DownloadConfig,
+  DrmConfig,
+  RunArgs,
+  PluginInstance,
+} from '@streamyx/plugin';
 import type { CrunchyrollPluginOptions } from './lib/types';
 import { useAuth } from './lib/auth';
 import { useApi } from './lib/api';
@@ -13,7 +19,10 @@ const buildDrmRequestOptions = (assetId: string, accountId: string) => ({
   }),
 });
 
-function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPluginOptions): PluginInstance {
+function streamyxCrunchyroll(
+  streamyx: StreamyxInstance,
+  options: CrunchyrollPluginOptions
+): PluginInstance {
   const auth = useAuth(streamyx, options.configPath);
   const api = useApi(streamyx, auth);
 
@@ -41,7 +50,9 @@ function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPlu
     const object = await api.fetchObject(episodeId);
     const isError = object.__class__ === 'error';
     if (isError) {
-      streamyx.log.error(`Episode ${episodeId} not found. Code: ${object.code}. Type: ${object.type}. `);
+      streamyx.log.error(
+        `Episode ${episodeId} not found. Code: ${object.code}. Type: ${object.type}. `
+      );
       process.exit(1);
     }
     const episode = object.items[0];
@@ -92,7 +103,7 @@ function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPlu
     }
     const stream: any = streams[0];
     const manifestUrl = stream.url;
-    const audioType = streamsData.audio_locale === 'ja-JP' ? 'JAPANESE' : 'DUBBED';
+    const audioType = streamsData.audio_locale?.slice(0, 2).toLowerCase();
     const assetId = stream.url.split('assets/p/')[1]?.split('_,')[0];
 
     const config: DownloadConfig = {
@@ -127,30 +138,38 @@ function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPlu
 
   const getEpisodesConfigBySeries = async (seriesId: string, args: RunArgs) => {
     const response = await api.fetchSeriesSeasons(seriesId);
-    const seasons = filterSeasonsByNumber(response.data, args.episodes);
+    const seasons = response.data;
     if (!seasons?.length) {
-      const seasonIds = response.data.map((s: any) => s.season_number).join(', ');
-      streamyx.log.error(`No suitable seasons found. Available seasons: ${seasonIds}`);
+      streamyx.log.error(`No seasons found`);
       return [];
     }
+
+    const getSeasonDubs = (season: any) =>
+      season.versions.map((v: any) => v.audio_locale).join(', ');
+
     const episodesQueue = seasons.map((season: any) => {
       const version = filterSeasonVersionsByAudio(season.versions, args.languages);
-      if (!version) {
-        if (args.languages.length)
-          streamyx.log.error(
-            `No suitable audio language found. Available languages: ${season.versions
-              .map((v: any) => v.audio_locale)
-              .join(', ')}`
-          );
-        return [];
-      }
+      if (!version) return [];
+      const overrideSeasonNumber = (episodes: any[]) => {
+        return episodes.map((episode: any) => ({
+          ...episode,
+          season_number: season.season_number,
+        }));
+      };
       return api
         .fetchEpisodes(version.guid)
-        .then((data) => data.items)
+        .then((data) => overrideSeasonNumber(data.items))
         .catch(() => []);
     });
     const allEpisodes = (await Promise.all(episodesQueue)).flat();
     const episodes = filterEpisodesByNumber(allEpisodes, args.episodes);
+    if (!episodes?.length) {
+      const availableSeasons = seasons
+        .map((s: any) => `${s.season_number} (${getSeasonDubs(s)})`)
+        .join(', ');
+      streamyx.log.error(`No suitable episodes found. Available seasons: ${availableSeasons}`);
+      return [];
+    }
     const episodeIds = episodes.map((episode: any) => episode.id);
     return getEpisodesConfig(episodeIds, args);
   };
@@ -161,15 +180,20 @@ function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPlu
   };
 
   const filterSeasonVersionsByAudio = (versions: any, selectedAudioLangs: string[]) => {
-    const matchLang = (version: any) => selectedAudioLangs.some((lang) => version.audio_locale.startsWith(lang));
+    const matchLang = (version: any) =>
+      selectedAudioLangs.some((lang) => version.audio_locale.startsWith(lang));
     const matchOriginal = (version: any) => !!version.original;
-    const result = selectedAudioLangs.length ? versions.find(matchLang) : versions.find(matchOriginal) || versions[0];
+    const result = selectedAudioLangs.length
+      ? versions.find(matchLang)
+      : versions.find(matchOriginal) || versions[0];
     return result;
   };
 
-  const filterEpisodesByNumber = (episodes: any, selectedEpisodes: RunArgs['episodes']) => {
-    if (!selectedEpisodes.size) return episodes;
-    return episodes.filter((episode: any) => selectedEpisodes.has(episode.episode_number, episode.season_number));
+  const filterEpisodesByNumber = (seasonEpisodes: any, selectedEpisodes: RunArgs['episodes']) => {
+    if (!selectedEpisodes.size) return seasonEpisodes;
+    return seasonEpisodes.filter((episode: any) =>
+      selectedEpisodes.has(episode.episode_number, episode.season_number)
+    );
   };
 
   const getConfigList = async (url: string, args: RunArgs): Promise<DownloadConfig[]> => {
