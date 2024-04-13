@@ -1,6 +1,6 @@
 {
   "name": "@streamyx/crunchyroll",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "author": "Vitaly Gashkov <vitalygashkov@vk.com>",
   "description": "Crunchyroll plugin for Streamyx",
   "main": "dist/crunchyroll.js",
@@ -15,6 +15,6 @@
     "typescript": "^5.4.2"
   },
   "dependencies": {
-    "@streamyx/plugin": "^0.0.6"
+    "@streamyx/plugin": "^0.0.7"
   }
 }
