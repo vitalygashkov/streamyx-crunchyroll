@@ -134,8 +134,16 @@ function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPlu
       return [];
     }
     const episodesQueue = seasons.map((season: any) => {
-      const version = filterSeasonVersionsByAudio(season.versions, args.audioLanguages);
-      if (!version) return [];
+      const version = filterSeasonVersionsByAudio(season.versions, args.languages);
+      if (!version) {
+        if (args.languages.length)
+          streamyx.log.error(
+            `No suitable audio language found. Available languages: ${season.versions
+              .map((v: any) => v.audio_locale)
+              .join(', ')}`
+          );
+        return [];
+      }
       return api
         .fetchEpisodes(version.guid)
         .then((data) => data.items)
@@ -155,7 +163,7 @@ function streamyxCrunchyroll(streamyx: StreamyxInstance, options: CrunchyrollPlu
   const filterSeasonVersionsByAudio = (versions: any, selectedAudioLangs: string[]) => {
     const matchLang = (version: any) => selectedAudioLangs.some((lang) => version.audio_locale.startsWith(lang));
     const matchOriginal = (version: any) => !!version.original;
-    const result = selectedAudioLangs.length ? versions.find(matchLang) : versions.find(matchOriginal);
+    const result = selectedAudioLangs.length ? versions.find(matchLang) : versions.find(matchOriginal) || versions[0];
     return result;
   };
 
