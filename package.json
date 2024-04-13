@@ -6,15 +6,14 @@
   "main": "dist/crunchyroll.js",
   "types": "dist/crunchyroll.d.ts",
   "scripts": {
-    "prepare": "npm run build",
     "build": "tsc"
   },
   "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^20.11.28",
-    "typescript": "^5.4.2"
-  },
   "dependencies": {
     "@streamyx/plugin": "^0.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
   }
 }
