@@ -28,9 +28,11 @@ export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
     'Key-Pair-Id': cms.key_pair_id,
   });
 
-  const sign = (params: Record<string, string> = {}) => new URLSearchParams({ ...params, ...getSign() }).toString();
+  const sign = (params: Record<string, string> = {}) =>
+    new URLSearchParams({ ...params, ...getSign() }).toString();
 
-  const japDub = { preferred_audio_language: 'ja-JP' };
+  const DEFAULT_DUB = 'ja-JP';
+  const preferDub = (language: string = DEFAULT_DUB) => ({ preferred_audio_language: language });
 
   return {
     fetchProfile() {
@@ -45,16 +47,16 @@ export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
       return fetchData(`${ROUTES.cms}${getCms().bucket}/videos/${videoId}/streams?${sign()}`);
     },
 
-    fetchSeries(seriesId: string) {
-      return fetchData(`${ROUTES.contentCms}/series/${seriesId}?${sign(japDub)}`);
+    fetchSeries(seriesId: string, dub?: string) {
+      return fetchData(`${ROUTES.contentCms}/series/${seriesId}?${sign(preferDub(dub))}`);
     },
 
-    fetchSeriesSeasons(seriesId: string) {
-      return fetchData(`${ROUTES.contentCms}/series/${seriesId}/seasons?${sign(japDub)}`);
+    fetchSeriesSeasons(seriesId: string, dub?: string) {
+      return fetchData(`${ROUTES.contentCms}/series/${seriesId}/seasons?${sign(preferDub(dub))}`);
     },
 
-    fetchSeason(seasonId: string) {
-      return fetchData(`${ROUTES.contentCms}/seasons/${seasonId}?${sign(japDub)}`);
+    fetchSeason(seasonId: string, dub?: string) {
+      return fetchData(`${ROUTES.contentCms}/seasons/${seasonId}?${sign(preferDub(dub))}`);
     },
 
     fetchEpisodes(seasonId: string) {
