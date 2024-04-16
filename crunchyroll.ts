@@ -46,6 +46,16 @@ function streamyxCrunchyroll(
     return value?.replace(/[&/\\#,+()$~%.'":*?<>{}]/g, '');
   };
 
+  const filterSeasonVersionsByAudio = (versions: any, selectedAudioLangs: string[] = []) => {
+    const matchLang = (version: any) =>
+      selectedAudioLangs.some((lang) => version.audio_locale.startsWith(lang));
+    const matchOriginal = (version: any) => !!version.original;
+    const result = selectedAudioLangs.length
+      ? versions.find(matchLang)
+      : versions.find(matchOriginal) || versions[0];
+    return result;
+  };
+
   const getEpisodeConfig = async (episodeId: string, args: RunArgs) => {
     const object = await api.fetchObject(episodeId);
     const isError = object.__class__ === 'error';
@@ -66,23 +76,26 @@ function streamyxCrunchyroll(
     const streamsId = streamsLink.split('/').at(-2);
     const streamsData = await api.fetchStreams(streamsId);
 
-    // const isSubbed = rawMetadata.is_subbed;
-    // const isDubbed = rawMetadata.is_dubbed;
-    // const subtitleLocales = rawMetadata.subtitle_locales;
     const subtitles: any[] = [];
     for (const subtitle of Object.values(streamsData.subtitles) as any[]) {
       const containsSelectedSubtitles =
         !args.subtitleLanguages?.length ||
-        args.subtitleLanguages?.some((lang: string) => subtitle.locale.includes(lang));
+        args.subtitleLanguages?.some((lang: string) => subtitle.locale.startsWith(lang));
       if (!containsSelectedSubtitles) continue;
       subtitles.push({ url: subtitle.url, language: subtitle.locale, format: subtitle.format });
     }
 
+    const version = filterSeasonVersionsByAudio(streamsData.versions, args.languages);
+    const versionObject = await api.fetchObject(version.guid);
+    const versionStreamsLink = versionObject.items[0]?.__links__.streams?.href;
+    const versionStreamsId = versionStreamsLink.split('/').at(-2);
+    const versionStreams = await api.fetchStreams(versionStreamsId);
+
     const streams: any[] = [];
-    for (const streamType of Object.keys(streamsData.streams)) {
+    for (const streamType of Object.keys(versionStreams.streams)) {
       if (streamType.includes('trailer')) continue;
       if (!streamType.includes('drm_adaptive_dash')) continue;
-      const subStreams: any[] = Object.values(streamsData.streams[streamType]);
+      const subStreams: any[] = Object.values(versionStreams.streams[streamType]);
       const modifiedStreams = subStreams
         .filter((stream) => {
           const hasHardsub = !!stream.hardsub_locale;
@@ -103,7 +116,7 @@ function streamyxCrunchyroll(
     }
     const stream: any = streams[0];
     const manifestUrl = stream.url;
-    const audioType = streamsData.audio_locale?.slice(0, 2).toLowerCase();
+    const audioType = versionStreams.audio_locale?.slice(0, 2).toLowerCase();
     const assetId = stream.url.split('assets/p/')[1]?.split('_,')[0];
 
     const config: DownloadConfig = {
@@ -111,7 +124,7 @@ function streamyxCrunchyroll(
       manifestUrl,
       drmConfig: () => getDrmConfig(assetId),
       audioType,
-      audioLanguage: streamsData.audio_locale,
+      audioLanguage: versionStreams.audio_locale,
       subtitles,
     };
 
@@ -148,7 +161,7 @@ function streamyxCrunchyroll(
       season.versions.map((v: any) => v.audio_locale).join(', ');
 
     const episodesQueue = seasons.map((season: any) => {
-      const version = filterSeasonVersionsByAudio(season.versions, args.languages);
+      const version = filterSeasonVersionsByAudio(season.versions);
       if (!version) return [];
       const overrideSeasonNumber = (episodes: any[]) => {
         return episodes.map((episode: any) => ({
@@ -177,16 +190,6 @@ function streamyxCrunchyroll(
   const filterSeasonsByNumber = (seasons: any, selectedSeasons: RunArgs['episodes']) => {
     if (!selectedSeasons.size) return seasons;
     return seasons.filter((season: any) => selectedSeasons.has(NaN, season.season_number));
-  };
-
-  const filterSeasonVersionsByAudio = (versions: any, selectedAudioLangs: string[]) => {
-    const matchLang = (version: any) =>
-      selectedAudioLangs.some((lang) => version.audio_locale.startsWith(lang));
-    const matchOriginal = (version: any) => !!version.original;
-    const result = selectedAudioLangs.length
-      ? versions.find(matchLang)
-      : versions.find(matchOriginal) || versions[0];
-    return result;
   };
 
   const filterEpisodesByNumber = (seasonEpisodes: any, selectedEpisodes: RunArgs['episodes']) => {
