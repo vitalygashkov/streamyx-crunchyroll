@@ -56,23 +56,21 @@ function streamyxCrunchyroll(
     return result;
   };
 
+  const getAudioLocales = (versions: any) => versions.map((v: any) => v.audio_locale).join(', ');
+
   const getEpisodeConfig = async (episodeId: string, args: RunArgs) => {
     const object = await api.fetchObject(episodeId);
     const isError = object.__class__ === 'error';
     if (isError) {
-      streamyx.log.error(
+      return streamyx.log.error(
         `Episode ${episodeId} not found. Code: ${object.code}. Type: ${object.type}. `
       );
-      process.exit(1);
     }
     const episode = object.items[0];
     const rawMetadata = episode.episode_metadata;
 
     const streamsLink = episode.__links__.streams?.href;
-    if (!streamsLink) {
-      streamyx.log.error(`Stream URL not found`);
-      process.exit(1);
-    }
+    if (!streamsLink) return streamyx.log.error(`Stream URL not found`);
     const streamsId = streamsLink.split('/').at(-2);
     const streamsData = await api.fetchStreams(streamsId);
 
@@ -85,7 +83,14 @@ function streamyxCrunchyroll(
       subtitles.push({ url: subtitle.url, language: subtitle.locale, format: subtitle.format });
     }
 
+    const seasonNumberString = rawMetadata.season_number.toString().padEnd(2, '0');
+    const episodeNumberString = rawMetadata.episode_number.toString().padEnd(2, '0');
     const version = filterSeasonVersionsByAudio(streamsData.versions, args.languages);
+    if (!version) {
+      return streamyx.log.error(
+        `No suitable version found for S${seasonNumberString}E${episodeNumberString}. Available languages: ${getAudioLocales(streamsData.versions)}`
+      );
+    }
     const versionObject = await api.fetchObject(version.guid);
     const versionStreamsLink = versionObject.items[0]?.__links__.streams?.href;
     const versionStreamsId = versionStreamsLink.split('/').at(-2);
@@ -111,8 +116,7 @@ function streamyxCrunchyroll(
     }
 
     if (!streams.length) {
-      streamyx.log.error(`No suitable streams found`);
-      process.exit(1);
+      return streamyx.log.error(`No suitable streams found`);
     }
     const stream: any = streams[0];
     const manifestUrl = stream.url;
@@ -145,7 +149,7 @@ function streamyxCrunchyroll(
 
   const getEpisodesConfig = async (episodeIds: string[], args: RunArgs) => {
     const configQueue = episodeIds.map((episodeId: string) => getEpisodeConfig(episodeId, args));
-    const configList = (await Promise.all(configQueue)).filter(Boolean);
+    const configList = (await Promise.all(configQueue)).filter(Boolean) as DownloadConfig[];
     return configList;
   };
 
@@ -156,9 +160,6 @@ function streamyxCrunchyroll(
       streamyx.log.error(`No seasons found`);
       return [];
     }
-
-    const getSeasonDubs = (season: any) =>
-      season.versions.map((v: any) => v.audio_locale).join(', ');
 
     const episodesQueue = seasons.map((season: any) => {
       const version = filterSeasonVersionsByAudio(season.versions);
@@ -178,7 +179,10 @@ function streamyxCrunchyroll(
     const episodes = filterEpisodesByNumber(allEpisodes, args.episodes);
     if (!episodes?.length) {
       const availableSeasons = seasons
-        .map((s: any) => `S${s.season_number.toString().padStart(2, '0')} (${getSeasonDubs(s)})`)
+        .map(
+          (s: any) =>
+            `S${s.season_number.toString().padStart(2, '0')} (${getAudioLocales(s.versions)})`
+        )
         .join(', ');
       streamyx.log.error(`No suitable episodes found. Available seasons: ${availableSeasons}`);
       return [];
@@ -210,7 +214,7 @@ function streamyxCrunchyroll(
       args.languages = [lang];
       if (episodeId) {
         const episodeConfig = await getEpisodeConfig(episodeId, args);
-        configList.push(episodeConfig);
+        if (episodeConfig) configList.push(episodeConfig);
       } else if (seriesId) {
         const episodeConfigs = await getEpisodesConfigBySeries(seriesId, args);
         configList.push(...episodeConfigs);
