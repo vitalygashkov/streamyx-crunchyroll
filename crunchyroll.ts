@@ -83,8 +83,8 @@ function streamyxCrunchyroll(
       subtitles.push({ url: subtitle.url, language: subtitle.locale, format: subtitle.format });
     }
 
-    const seasonNumberString = rawMetadata.season_number.toString().padEnd(2, '0');
-    const episodeNumberString = rawMetadata.episode_number.toString().padEnd(2, '0');
+    const seasonNumberString = rawMetadata.season_number?.toString().padEnd(2, '0') || '?';
+    const episodeNumberString = rawMetadata.episode_number?.toString().padEnd(2, '0') || '?';
     const version = filterSeasonVersionsByAudio(streamsData.versions, args.languages);
     if (!version) {
       return streamyx.log.error(
