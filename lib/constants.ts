@@ -14,6 +14,7 @@ export const ROUTES = {
   index: `${DOMAINS.betaApi}/index/v2`,
   contentCms: `${DOMAINS.betaApi}/content/v2/cms`,
   profile: `${DOMAINS.betaApi}/accounts/v1/me/profile`,
+  drm: `${DOMAINS.betaApi}/drm/v1/auth`,
 };
 
 const FIRETV_PROD_CLIENT_ID = 'i3amc7y0k_5flypfnpk2';

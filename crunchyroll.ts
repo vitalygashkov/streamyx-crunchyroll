@@ -8,6 +8,7 @@ import type {
 import type { CrunchyrollPluginOptions } from './lib/types';
 import { useAuth } from './lib/auth';
 import { useApi } from './lib/api';
+import { ROUTES } from './lib/constants';
 
 const buildDrmRequestOptions = (assetId: string, accountId: string) => ({
   method: 'POST',
@@ -31,7 +32,7 @@ function streamyxCrunchyroll(
 
   const getDrmConfig = async (assetId: string): Promise<DrmConfig> => {
     const options = buildDrmRequestOptions(assetId, auth.state.accountId || '');
-    const response = await streamyx.http.fetch(`https://pl.crunchyroll.com/drm/v1/auth`, options);
+    const response = await streamyx.http.fetch(ROUTES.drm, options);
     const data: any = await response.json();
     return {
       server: `https://lic.drmtoday.com/license-proxy-widevine/cenc/`,
@@ -85,22 +86,29 @@ function streamyxCrunchyroll(
 
     const seasonNumberString = rawMetadata.season_number?.toString().padEnd(2, '0') || '?';
     const episodeNumberString = rawMetadata.episode_number?.toString().padEnd(2, '0') || '?';
-    const version = filterSeasonVersionsByAudio(streamsData.versions, args.languages);
-    if (!version) {
-      return streamyx.log.error(
-        `No suitable version found for S${seasonNumberString}E${episodeNumberString}. Available languages: ${getAudioLocales(streamsData.versions)}`
-      );
+
+    let data = {} as any;
+    if (streamsData.versions) {
+      const version = filterSeasonVersionsByAudio(streamsData.versions, args.languages);
+      if (!version) {
+        return streamyx.log.error(
+          `No suitable version found for S${seasonNumberString}E${episodeNumberString}. Available languages: ${getAudioLocales(streamsData.versions)}`
+        );
+      }
+      const versionObject = await api.fetchObject(version.guid);
+      const versionStreamsLink = versionObject.items[0]?.__links__.streams?.href;
+      const versionStreamsId = versionStreamsLink.split('/').at(-2);
+      const versionStreams = await api.fetchStreams(versionStreamsId);
+      data = versionStreams;
+    } else {
+      data = streamsData;
     }
-    const versionObject = await api.fetchObject(version.guid);
-    const versionStreamsLink = versionObject.items[0]?.__links__.streams?.href;
-    const versionStreamsId = versionStreamsLink.split('/').at(-2);
-    const versionStreams = await api.fetchStreams(versionStreamsId);
 
     const streams: any[] = [];
-    for (const streamType of Object.keys(versionStreams.streams)) {
+    for (const streamType of Object.keys(data.streams)) {
       if (streamType.includes('trailer')) continue;
       if (!streamType.includes('drm_adaptive_dash')) continue;
-      const subStreams: any[] = Object.values(versionStreams.streams[streamType]);
+      const subStreams: any[] = Object.values(data.streams[streamType]);
       const modifiedStreams = subStreams
         .filter((stream) => {
           const hasHardsub = !!stream.hardsub_locale;
@@ -120,7 +128,7 @@ function streamyxCrunchyroll(
     }
     const stream: any = streams[0];
     const manifestUrl = stream.url;
-    const audioType = versionStreams.audio_locale?.slice(0, 2).toLowerCase();
+    const audioType = data.audio_locale?.slice(0, 2).toLowerCase();
     const assetId = stream.url.split('assets/p/')[1]?.split('_,')[0];
 
     const config: DownloadConfig = {
@@ -128,7 +136,7 @@ function streamyxCrunchyroll(
       manifestUrl,
       drmConfig: () => getDrmConfig(assetId),
       audioType,
-      audioLanguage: versionStreams.audio_locale,
+      audioLanguage: data.audio_locale,
       subtitles,
     };
 

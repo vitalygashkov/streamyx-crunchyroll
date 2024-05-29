@@ -36,7 +36,9 @@ export const useAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
 
     async loadState() {
       streamyx.log.debug(`Loading auth state from ${storeFilePath}`);
-      const data = await streamyx.fs.readJson<AuthState>(storeFilePath).catch<AuthState>(() => ({}));
+      const data = await streamyx.fs
+        .readJson<AuthState>(storeFilePath)
+        .catch<AuthState>(() => ({}));
       streamyx.http.setHeader('authorization', `Bearer ${data.accessToken}`);
       Object.assign(state, data);
       return data;
