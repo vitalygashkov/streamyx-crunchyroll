@@ -1,12 +1,17 @@
 import type { StreamyxInstance } from '@streamyx/plugin';
-import type { Auth } from './auth';
+import { type Auth } from './auth';
 import type { Cms } from './types';
-import { ROUTES } from './constants';
+import { ROUTES, USER_AGENTS } from './constants';
 
 export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
   const fetchData = async (url: string, json = true) => {
     streamyx.log.debug(`Getting data from ${url}...`);
-    const response = await streamyx.http.fetch(url);
+    const response = await streamyx.http.fetch(url, {
+      headers: {
+        authorization: `Bearer ${auth.state.accessToken}`,
+        'User-Agent': USER_AGENTS.nintendoSwitch,
+      },
+    });
     const data = (await response.text()) || '';
     response.status === 401 && streamyx.log.error(`Unauthorized: ${url}`);
     response.status === 400 && streamyx.log.error(`Bad Request: ${url}`);
@@ -37,6 +42,12 @@ export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
   return {
     fetchProfile() {
       return fetchData(ROUTES.profile);
+    },
+
+    fetchPlayData(id: string | number) {
+      return fetchData(
+        `https://cr-play-service.prd.crunchyrollsvc.com/v1/${id}/console/switch/play`
+      );
     },
 
     fetchObject(objectId: string | number) {

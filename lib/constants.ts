@@ -31,8 +31,14 @@ const TV_STAGING_CLIENT_ID = 'tomiq98p-npokj4zqw94';
 const TV_STAGING_CLIENT_SECRET = 'Ks9ZAi2EDToP2ob6xr5bkCh5LDZIaaMS';
 const MOBILE_CLIENT_ID = 'nmvjshfknymxxkg7fbh9';
 const MOBILE_CLIENT_SECRET = 'ZYIVrBWUPbcXDtbD22VSLa6b4WQos3zX';
+const SWITCH_CLIENT_ID = 't-kdgp2h8c3jub8fn0fq';
+const SWITCH_CLIENT_SECRET = 'yfLDfMfrYvKXh4JXS1LEI2cCqu1v5Wan';
 
-const CLIENT_ID = TV_PROD_CLIENT_ID;
-const CLIENT_SECRET = TV_PROD_CLIENT_SECRET;
+const CLIENT_ID = SWITCH_CLIENT_ID;
+const CLIENT_SECRET = SWITCH_CLIENT_SECRET;
 
 export const BASIC_TOKEN = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+
+export const USER_AGENTS = {
+  nintendoSwitch: 'Crunchyroll/1.8.0 Nintendo Switch/12.3.12.0 UE4/4.27',
+};

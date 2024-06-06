@@ -8,7 +8,7 @@ import type {
 import type { CrunchyrollPluginOptions } from './lib/types';
 import { useAuth } from './lib/auth';
 import { useApi } from './lib/api';
-import { ROUTES } from './lib/constants';
+import { ROUTES, USER_AGENTS } from './lib/constants';
 
 const buildDrmRequestOptions = (assetId: string, accountId: string) => ({
   method: 'POST',
@@ -69,74 +69,57 @@ function streamyxCrunchyroll(
     }
     const episode = object.items[0];
     const rawMetadata = episode.episode_metadata;
-
-    const streamsLink = episode.__links__.streams?.href;
-    if (!streamsLink) return streamyx.log.error(`Stream URL not found`);
-    const streamsId = streamsLink.split('/').at(-2);
-    const streamsData = await api.fetchStreams(streamsId);
-
-    const subtitles: any[] = [];
-    for (const subtitle of Object.values(streamsData.subtitles) as any[]) {
-      const containsSelectedSubtitles =
-        !args.subtitleLanguages?.length ||
-        args.subtitleLanguages?.some((lang: string) => subtitle.locale.startsWith(lang));
-      if (!containsSelectedSubtitles) continue;
-      subtitles.push({ url: subtitle.url, language: subtitle.locale, format: subtitle.format });
-    }
-
     const seasonNumberString = rawMetadata.season_number?.toString().padEnd(2, '0') || '?';
     const episodeNumberString = rawMetadata.episode_number?.toString().padEnd(2, '0') || '?';
 
-    let data = {} as any;
-    if (streamsData.versions) {
-      const version = filterSeasonVersionsByAudio(streamsData.versions, args.languages);
+    const play = await api.fetchPlayData(episodeId);
+    const subtitles: any[] = [];
+    for (const subtitle of Object.values(play.subtitles) as any[]) {
+      const containsSelectedSubtitles =
+        !args.subtitleLanguages?.length ||
+        args.subtitleLanguages?.some((lang: string) => subtitle.language.startsWith(lang));
+      if (!containsSelectedSubtitles) continue;
+      subtitles.push({ url: subtitle.url, language: subtitle.language, format: subtitle.format });
+    }
+
+    let data = play;
+    if (play.versions) {
+      const version = filterSeasonVersionsByAudio(play.versions, args.languages);
       if (!version) {
         return streamyx.log.error(
-          `No suitable version found for S${seasonNumberString}E${episodeNumberString}. Available languages: ${getAudioLocales(streamsData.versions)}`
+          `No suitable version found for S${seasonNumberString}E${episodeNumberString}. Available languages: ${getAudioLocales(play.versions)}`
         );
       }
-      const versionObject = await api.fetchObject(version.guid);
-      const versionStreamsLink = versionObject.items[0]?.__links__.streams?.href;
-      const versionStreamsId = versionStreamsLink.split('/').at(-2);
-      const versionStreams = await api.fetchStreams(versionStreamsId);
-      data = versionStreams;
-    } else {
-      data = streamsData;
+      if (version.guid !== episodeId) data = await api.fetchPlayData(version.guid);
     }
 
-    const streams: any[] = [];
-    for (const streamType of Object.keys(data.streams)) {
-      if (streamType.includes('trailer')) continue;
-      if (!streamType.includes('drm_adaptive_dash')) continue;
-      const subStreams: any[] = Object.values(data.streams[streamType]);
-      const modifiedStreams = subStreams
-        .filter((stream) => {
-          const hasHardsub = !!stream.hardsub_locale;
-          const needHardsub = !!args.hardsub;
-          const matchHardsubLang =
-            !args.subtitleLanguages.length ||
-            args.subtitleLanguages.some((lang: string) => stream.hardsub_locale.includes(lang));
-          if (needHardsub && hasHardsub && matchHardsubLang) return true;
-          else return !needHardsub && !hasHardsub;
-        })
-        .map((stream) => ({ ...stream, type: streamType }));
-      streams.push(...modifiedStreams);
+    if (args.hardsub) {
+      let url: string = '';
+      for (const hardsub of Object.values(data.hardSubs) as any[]) {
+        const matchHardsubLang =
+          !args.subtitleLanguages.length ||
+          args.subtitleLanguages.some((lang: string) => hardsub.hlang.includes(lang));
+        if (matchHardsubLang) url = hardsub.url;
+      }
+      if (!url) return streamyx.log.warn(`No suitable hardsub stream found`);
+      else data.url = url;
     }
 
-    if (!streams.length) {
-      return streamyx.log.error(`No suitable streams found`);
-    }
-    const stream: any = streams[0];
-    const manifestUrl = stream.url;
-    const audioType = data.audio_locale?.slice(0, 2).toLowerCase();
-    const assetId = stream.url.split('assets/p/')[1]?.split('_,')[0];
+    const url = data.url;
+    const audioType = data.audioLocale?.slice(0, 2).toLowerCase();
+    const assetId = url.split('assets/p/')[1]?.split('_,')[0];
 
     const config: DownloadConfig = {
       provider: 'CR',
-      manifestUrl,
+      manifestUrl: url,
+      headers: {
+        Authorization: `Bearer ${auth.state.accessToken}`,
+        // 'X-Cr-Disable-Drm': 'true',
+        'User-Agent': USER_AGENTS.nintendoSwitch,
+      },
       drmConfig: () => getDrmConfig(assetId),
       audioType,
-      audioLanguage: data.audio_locale,
+      audioLanguage: data.audioLocale,
       subtitles,
     };
 
