@@ -5,6 +5,7 @@ export const DOMAINS = {
   betaApi: 'https://beta-api.crunchyroll.com',
   proto: 'https://beta-api.etp-proto0.com',
   staging: 'https://beta-stage-api.crunchyroll.com',
+  play: 'https://cr-play-service.prd.crunchyrollsvc.com',
 };
 
 export const ROUTES = {
@@ -15,6 +16,7 @@ export const ROUTES = {
   contentCms: `${DOMAINS.betaApi}/content/v2/cms`,
   profile: `${DOMAINS.betaApi}/accounts/v1/me/profile`,
   drm: `${DOMAINS.betaApi}/drm/v1/auth`,
+  play: `${DOMAINS.play}/v1`,
 };
 
 const FIRETV_PROD_CLIENT_ID = 'i3amc7y0k_5flypfnpk2';

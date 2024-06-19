@@ -4,9 +4,10 @@ import type { Cms } from './types';
 import { ROUTES, USER_AGENTS } from './constants';
 
 export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
-  const fetchData = async (url: string, json = true) => {
+  const request = async (url: string, method: string = 'GET') => {
     streamyx.log.debug(`Getting data from ${url}...`);
     const response = await streamyx.http.fetch(url, {
+      method,
       headers: {
         authorization: `Bearer ${auth.state.accessToken}`,
         'User-Agent': USER_AGENTS.nintendoSwitch,
@@ -18,7 +19,7 @@ export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
     const isSuccess = response.status === 200;
     if (!isSuccess) streamyx.log.debug(`Request failed. Route: ${url}. ${data}`);
     try {
-      return json ? JSON.parse(data) : data;
+      return JSON.parse(data);
     } catch (e) {
       streamyx.log.error(`Parsing JSON response failed. Route: ${url}`);
       process.exit(1);
@@ -41,37 +42,39 @@ export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
 
   return {
     fetchProfile() {
-      return fetchData(ROUTES.profile);
+      return request(ROUTES.profile);
     },
 
-    fetchPlayData(id: string | number) {
-      return fetchData(
-        `https://cr-play-service.prd.crunchyrollsvc.com/v1/${id}/console/switch/play`
-      );
+    fetchPlayData(id: string | number, deviceType = 'console', deviceName = 'switch') {
+      return request(`${ROUTES.play}/${id}/${deviceType}/${deviceName}/play`);
+    },
+
+    revokePlayData(id: string | number, token: string) {
+      return request(`${ROUTES.play}/token/${id}/${token}`, 'DELETE');
     },
 
     fetchObject(objectId: string | number) {
-      return fetchData(`${ROUTES.cms}${getCms().bucket}/objects/${objectId}?${sign()}`);
+      return request(`${ROUTES.cms}${getCms().bucket}/objects/${objectId}?${sign()}`);
     },
 
     fetchStreams(videoId: string) {
-      return fetchData(`${ROUTES.cms}${getCms().bucket}/videos/${videoId}/streams?${sign()}`);
+      return request(`${ROUTES.cms}${getCms().bucket}/videos/${videoId}/streams?${sign()}`);
     },
 
     fetchSeries(seriesId: string, dub?: string) {
-      return fetchData(`${ROUTES.contentCms}/series/${seriesId}?${sign(preferDub(dub))}`);
+      return request(`${ROUTES.contentCms}/series/${seriesId}?${sign(preferDub(dub))}`);
     },
 
     fetchSeriesSeasons(seriesId: string, dub?: string) {
-      return fetchData(`${ROUTES.contentCms}/series/${seriesId}/seasons?${sign(preferDub(dub))}`);
+      return request(`${ROUTES.contentCms}/series/${seriesId}/seasons?${sign(preferDub(dub))}`);
     },
 
     fetchSeason(seasonId: string, dub?: string) {
-      return fetchData(`${ROUTES.contentCms}/seasons/${seasonId}?${sign(preferDub(dub))}`);
+      return request(`${ROUTES.contentCms}/seasons/${seasonId}?${sign(preferDub(dub))}`);
     },
 
     fetchEpisodes(seasonId: string) {
-      return fetchData(`${ROUTES.cms}${getCms().bucket}/episodes?${sign({ season_id: seasonId })}`);
+      return request(`${ROUTES.cms}${getCms().bucket}/episodes?${sign({ season_id: seasonId })}`);
     },
   };
 };

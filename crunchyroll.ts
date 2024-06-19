@@ -107,7 +107,9 @@ function streamyxCrunchyroll(
 
     const url = data.url;
     const audioType = data.audioLocale?.slice(0, 2).toLowerCase();
-    const assetId = url.split('assets/p/')[1]?.split('_,')[0];
+    const assetId = url.split('assets/p/')[1]?.split('_,')[0] || data.assetId;
+
+    await api.revokePlayData(episodeId, data.token);
 
     const config: DownloadConfig = {
       provider: 'CR',
