@@ -19,8 +19,10 @@ export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
     const isSuccess = response.status === 200;
     if (!isSuccess) streamyx.log.debug(`Request failed. Route: ${url}. ${data}`);
     try {
-      return JSON.parse(data);
+      return data ? JSON.parse(data) : data;
     } catch (e) {
+      streamyx.log.debug(data);
+      streamyx.log.debug(e);
       streamyx.log.error(`Parsing JSON response failed. Route: ${url}`);
       process.exit(1);
     }
