@@ -57,12 +57,19 @@ function streamyxCrunchyroll(
     return result;
   };
 
-  const getAudioLocales = (versions: any) => versions.map((v: any) => v.audio_locale).join(', ');
+  const getAudioLocales = (versions: any) =>
+    versions
+      .map((v: any) => v.audio_locale)
+      .join(', ')
+      .trim();
 
   const getEpisodeConfig = async (episodeId: string, args: RunArgs) => {
     const object = await api.fetchObject(episodeId);
     const isError = object.__class__ === 'error';
     if (isError) {
+      const response = await streamyx.http.fetch('https://api.country.is').catch(() => null);
+      const { ip, country } = await response?.json();
+      streamyx.log.info(`IP: ${ip}. Country: ${country}`);
       return streamyx.log.error(
         `Episode ${episodeId} not found. Code: ${object.code}. Type: ${object.type}. `
       );
@@ -84,13 +91,16 @@ function streamyxCrunchyroll(
 
     let data = play;
     if (play.versions) {
-      const version = filterSeasonVersionsByAudio(play.versions, args.languages);
+      const defaultVersion = { audio_locale: play.audioLocale, guid: episodeId };
+      const versions = [defaultVersion, ...play.versions];
+      const version = filterSeasonVersionsByAudio(versions, args.languages);
       if (!version) {
-        return streamyx.log.error(
-          `No suitable version found for S${seasonNumberString}E${episodeNumberString}. Available languages: ${getAudioLocales(play.versions)}`
+        streamyx.log.warn(
+          `No suitable version found for S${seasonNumberString}E${episodeNumberString}. Available audio: ${getAudioLocales(versions)}`
         );
+      } else if (version.guid !== episodeId) {
+        data = await api.fetchPlayData(version.guid);
       }
-      if (version.guid !== episodeId) data = await api.fetchPlayData(version.guid);
     }
 
     if (args.hardsub) {
@@ -108,8 +118,6 @@ function streamyxCrunchyroll(
     const url = data.url;
     const audioType = data.audioLocale?.slice(0, 2).toLowerCase();
     const assetId = url.split('assets/p/')[1]?.split('_,')[0] || data.assetId;
-
-    await api.revokePlayData(episodeId, data.token);
 
     const config: DownloadConfig = {
       provider: 'CR',
