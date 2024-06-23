@@ -8,7 +8,7 @@ import type {
 import type { CrunchyrollPluginOptions } from './lib/types';
 import { useAuth } from './lib/auth';
 import { useApi } from './lib/api';
-import { ROUTES, USER_AGENTS } from './lib/constants';
+import { DEVICE, ROUTES } from './lib/constants';
 
 const buildDrmRequestOptions = (assetId: string, accountId: string) => ({
   method: 'POST',
@@ -125,7 +125,7 @@ function streamyxCrunchyroll(
       headers: {
         Authorization: `Bearer ${auth.state.accessToken}`,
         // 'X-Cr-Disable-Drm': 'true',
-        'User-Agent': USER_AGENTS.nintendoSwitch,
+        'User-Agent': DEVICE.userAgent,
       },
       drmConfig: () => getDrmConfig(assetId),
       audioType,

@@ -1,7 +1,7 @@
 import type { StreamyxInstance } from '@streamyx/plugin';
 import { type Auth } from './auth';
 import type { Cms } from './types';
-import { ROUTES, USER_AGENTS } from './constants';
+import { DEVICE, ROUTES } from './constants';
 
 export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
   const request = async (url: string, method: string = 'GET') => {
@@ -10,7 +10,7 @@ export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
       method,
       headers: {
         authorization: `Bearer ${auth.state.accessToken}`,
-        'User-Agent': USER_AGENTS.nintendoSwitch,
+        'User-Agent': DEVICE.userAgent,
       },
     });
     const data = (await response.text()) || '';
@@ -47,8 +47,8 @@ export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
       return request(ROUTES.profile);
     },
 
-    fetchPlayData(id: string | number, deviceType = 'console', deviceName = 'switch') {
-      return request(`${ROUTES.play}/${id}/${deviceType}/${deviceName}/play`);
+    fetchPlayData(id: string | number, devicePlatform = DEVICE.platform, deviceType = DEVICE.type) {
+      return request(`${ROUTES.play}/${id}/${devicePlatform}/${deviceType}/play`);
     },
 
     revokePlayData(id: string | number, token: string) {

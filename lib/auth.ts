@@ -1,11 +1,11 @@
 import type { StreamyxInstance } from '@streamyx/plugin';
 import type { AuthState, CmsAuthResponse } from './types';
-import { BASIC_TOKEN, ROUTES, USER_AGENTS } from './constants';
+import { DEVICE, ROUTES } from './constants';
 
 export const HEADERS = {
-  authorization: `Basic ${BASIC_TOKEN}`,
+  authorization: DEVICE.authorization,
   'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-  'User-Agent': USER_AGENTS.nintendoSwitch,
+  'User-Agent': DEVICE.userAgent,
 };
 
 const buildRequestOptions = (params: Record<string, string>) => {

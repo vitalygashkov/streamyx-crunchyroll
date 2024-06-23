@@ -19,28 +19,41 @@ export const ROUTES = {
   play: `${DOMAINS.play}/v1`,
 };
 
-const FIRETV_PROD_CLIENT_ID = 'i3amc7y0k_5flypfnpk2';
-const FIRETV_PROD_CLIENT_SECRET = 'lmT8sSvagLo5tiGP0xntJlf8qXGqvuiz';
-const FIRETV_PROTO_CLIENT_ID = 'ys_wlhqy6xszxrzq_xz1';
-const FIRETV_PROTO_CLIENT_SECRET = 'eHDBEATsYsikC5TaukArgpmfxKY7nCH9';
-const FIRETV_STAGING_CLIENT_ID = 'buieosfrytrycw9gco7b';
-const FIRETV_STAGING_CLIENT_SECRET = 'GAJSFWaWopNDZetpHJsS2qEd4CdlJG96\n';
-const TV_PROD_CLIENT_ID = 'ju8lksokvlqmg1_fjmnv';
-const TV_PROD_CLIENT_SECRET = 'AMZSQvd9Dg-kI4Qc7NPqiU5O6aKoZIkh';
-const TV_PROTO_CLIENT_ID = 'haz2ernyiind8rkvoeg-';
-const TV_PROTO_CLIENT_SECRET = 'kce7P5Af9-OMoNnXcVwqZCpg1vFeaR0p';
-const TV_STAGING_CLIENT_ID = 'tomiq98p-npokj4zqw94';
-const TV_STAGING_CLIENT_SECRET = 'Ks9ZAi2EDToP2ob6xr5bkCh5LDZIaaMS';
-const MOBILE_CLIENT_ID = 'nmvjshfknymxxkg7fbh9';
-const MOBILE_CLIENT_SECRET = 'ZYIVrBWUPbcXDtbD22VSLa6b4WQos3zX';
-const SWITCH_CLIENT_ID = 't-kdgp2h8c3jub8fn0fq';
-const SWITCH_CLIENT_SECRET = 'yfLDfMfrYvKXh4JXS1LEI2cCqu1v5Wan';
-
-const CLIENT_ID = SWITCH_CLIENT_ID;
-const CLIENT_SECRET = SWITCH_CLIENT_SECRET;
-
-export const BASIC_TOKEN = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
-
-export const USER_AGENTS = {
-  nintendoSwitch: 'Crunchyroll/1.8.0 Nintendo Switch/12.3.12.0 UE4/4.27',
+export const CLIENTS = {
+  mobile: { id: 'wjb1_ta8mkv7_kxhqzv7', secret: '2yRZX4cJl_o234jkaMitSmsKQYFiJP_5' },
+  switch: { id: 't-kdgp2h8c3jub8fn0fq', secret: 'yfLDfMfrYvKXh4JXS1LEI2cCqu1v5Wan' },
+  tv: { id: 'ju8lksokvlqmg1_fjmnv', secret: 'AMZSQvd9Dg-kI4Qc7NPqiU5O6aKoZIkh' },
+  tvProto: { id: 'haz2ernyiind8rkvoeg-', secret: 'kce7P5Af9-OMoNnXcVwqZCpg1vFeaR0p' },
+  tvStaging: { id: 'tomiq98p-npokj4zqw94', secret: 'Ks9ZAi2EDToP2ob6xr5bkCh5LDZIaaMS' },
+  firetv: { id: 'nmvjshfknymxxkg7fbh9', secret: 'ZYIVrBWUPbcXDtbD22VSLa6b4WQos3zX' },
+  firetvProto: { id: 'ys_wlhqy6xszxrzq_xz1', secret: 'eHDBEATsYsikC5TaukArgpmfxKY7nCH9' },
+  firetvStaging: { id: 'buieosfrytrycw9gco7b', secret: 'GAJSFWaWopNDZetpHJsS2qEd4CdlJG96\n' },
 };
+
+const createBasicToken = (clientId: string, clientSecret: string) =>
+  Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+const createDevice = <T = Record<string, string>>(
+  options: T & { clientId: string; clientSecret: string }
+): T & { basicToken: string; authorization: string } => {
+  const basicToken = createBasicToken(options.clientId, options.clientSecret);
+  return { ...options, basicToken, authorization: `Basic ${basicToken}` };
+};
+
+export const DEVICES = {
+  nintendoSwitch: createDevice({
+    platform: 'console',
+    type: 'switch',
+    userAgent: 'Crunchyroll/1.8.0 Nintendo Switch/12.3.12.0 UE4/4.27',
+    clientId: CLIENTS.switch.id,
+    clientSecret: CLIENTS.switch.secret,
+  }),
+  androidPhone: createDevice({
+    platform: 'android',
+    type: 'phone',
+    clientId: CLIENTS.mobile.id,
+    clientSecret: CLIENTS.mobile.secret,
+  }),
+};
+
+export const DEVICE = DEVICES.nintendoSwitch;
