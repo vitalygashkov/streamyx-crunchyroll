@@ -14,6 +14,8 @@ export interface AuthState {
   cookies?: string;
   expires?: number;
   cmsAuth?: CmsAuthResponse;
+  deviceId?: string;
+  deviceType?: string;
 }
 
 export interface CmsAuthResponse {

@@ -59,11 +59,13 @@ export const useAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
 
     async fetchToken(params: Record<string, string>) {
       try {
+        const deviceId = state.deviceId || DEVICE.id;
+        const deviceType = state.deviceType || DEVICE.type;
         const options = buildRequestOptions({
           ...params,
           scope: 'offline_access',
-          device_id: DEVICE.id,
-          device_type: DEVICE.type,
+          device_id: deviceId,
+          device_type: deviceType,
         });
         const response = await streamyx.http.fetch(ROUTES.token, options);
         const auth: any = await response.json();
@@ -87,6 +89,8 @@ export const useAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
             accountId: auth.account_id,
             cookies: streamyx.http.headers.cookie,
             cmsAuth,
+            deviceId,
+            deviceType,
           };
           streamyx.http.setHeader('authorization', `Bearer ${newState.accessToken}`);
           await this.saveState(newState);
@@ -122,7 +126,14 @@ export const useAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
 
     async signOut() {
       streamyx.http.setHeader('authorization', '');
-      await this.saveState({ accessToken: '', refreshToken: '', expires: 0, tokenType: '' });
+      await this.saveState({
+        accessToken: '',
+        refreshToken: '',
+        expires: 0,
+        tokenType: '',
+        deviceId: '',
+        deviceType: '',
+      });
     },
   };
 };
