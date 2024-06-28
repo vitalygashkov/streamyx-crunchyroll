@@ -47,8 +47,8 @@ export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
       return request(ROUTES.profile);
     },
 
-    fetchPlayData(id: string | number, devicePlatform = DEVICE.platform, deviceType = DEVICE.type) {
-      return request(`${ROUTES.play}/${id}/${devicePlatform}/${deviceType}/play`);
+    fetchPlayData(id: string | number, devicePlatform = DEVICE.platform, deviceName = DEVICE.name) {
+      return request(`${ROUTES.play}/${id}/${devicePlatform}/${deviceName}/play`);
     },
 
     revokePlayData(id: string | number, token: string) {

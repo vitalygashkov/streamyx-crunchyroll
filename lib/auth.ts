@@ -59,7 +59,12 @@ export const useAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
 
     async fetchToken(params: Record<string, string>) {
       try {
-        const options = buildRequestOptions({ ...params, scope: 'offline_access' });
+        const options = buildRequestOptions({
+          ...params,
+          scope: 'offline_access',
+          device_id: DEVICE.id,
+          device_type: DEVICE.type,
+        });
         const response = await streamyx.http.fetch(ROUTES.token, options);
         const auth: any = await response.json();
         const error = auth.error || response.status !== 200;
