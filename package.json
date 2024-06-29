@@ -1,6 +1,6 @@
 {
   "name": "@streamyx/crunchyroll",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "author": "Vitaly Gashkov <vitalygashkov@vk.com>",
   "description": "Crunchyroll plugin for Streamyx",
   "main": "dist/crunchyroll.js",
@@ -13,7 +13,7 @@
   },
   "license": "ISC",
   "dependencies": {
-    "@streamyx/core": "^0.0.2"
+    "@streamyx/core": "^0.0.3"
   },
   "devDependencies": {
     "@types/node": "^20.14.9",
