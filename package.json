@@ -12,7 +12,7 @@
   },
   "license": "ISC",
   "dependencies": {
-    "@streamyx/plugin": "^0.0.12"
+    "@streamyx/core": "^0.0.2"
   },
   "devDependencies": {
     "@types/node": "^20.14.9",

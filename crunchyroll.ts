@@ -4,7 +4,7 @@ import type {
   DrmConfig,
   RunArgs,
   PluginInstance,
-} from '@streamyx/plugin';
+} from '@streamyx/core';
 import type { CrunchyrollPluginOptions } from './lib/types';
 import { createAuth } from './lib/auth';
 import { createApi } from './lib/api';

@@ -1,4 +1,4 @@
-import type { StreamyxInstance } from '@streamyx/plugin';
+import type { StreamyxInstance } from '@streamyx/core';
 import { type Auth } from './auth';
 import type { Cms } from './types';
 import { DEVICE, ROUTES } from './constants';
