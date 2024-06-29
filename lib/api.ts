@@ -43,6 +43,8 @@ export const createApi = (streamyx: StreamyxInstance, auth: Auth) => {
   const preferDub = (language: string = DEFAULT_DUB) => ({ preferred_audio_language: language });
 
   return {
+    auth,
+
     fetchProfile() {
       return request(ROUTES.profile);
     },

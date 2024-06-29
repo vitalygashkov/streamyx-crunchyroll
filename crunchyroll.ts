@@ -22,7 +22,7 @@ const buildDrmRequestOptions = (assetId: string, accountId: string) => ({
 
 export const crunchyroll =
   (options: CrunchyrollPluginOptions) =>
-  (streamyx: StreamyxInstance): PluginInstance => {
+  (streamyx: StreamyxInstance): PluginInstance<CrunchyrollApi> => {
     const auth = createAuth(streamyx, options.configPath);
     const api = createApi(streamyx, auth);
 

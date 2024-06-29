@@ -110,14 +110,15 @@ export const createAuth = (streamyx: StreamyxInstance, storeFilePath: string) =>
       return this.fetchToken({ grant_type: 'refresh_token', refresh_token: refreshToken });
     },
 
-    async signIn() {
+    async signIn(username?: string, password?: string) {
       await this.loadState();
       const { hasToken, isTokenExpired } = this.checkToken();
       if (!hasToken) {
         streamyx.log.debug(`Requesting credentials`);
-        const { username, password } = await promptCredentials();
+        const credentials =
+          username && password ? { username, password } : await promptCredentials();
         streamyx.log.debug(`Requesting token`);
-        await this.fetchAccessToken(username, password);
+        await this.fetchAccessToken(credentials.username, credentials.password);
       } else if (isTokenExpired) {
         streamyx.log.debug(`Refreshing token`);
         if (state.refreshToken) await this.fetchRefreshToken(state.refreshToken);
