@@ -14,7 +14,7 @@ const buildRequestOptions = (params: Record<string, string>) => {
 
 const state: AuthState = {};
 
-export const useAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
+export const createAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
   const promptCredentials = async () => {
     const username = await streamyx.prompt.waitForInput('Username');
     const password = await streamyx.prompt.waitForInput('Password');
@@ -138,4 +138,4 @@ export const useAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
   };
 };
 
-export type Auth = ReturnType<typeof useAuth>;
+export type Auth = ReturnType<typeof createAuth>;

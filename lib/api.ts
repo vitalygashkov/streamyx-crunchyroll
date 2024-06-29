@@ -3,7 +3,7 @@ import { type Auth } from './auth';
 import type { Cms } from './types';
 import { DEVICE, ROUTES } from './constants';
 
-export const useApi = (streamyx: StreamyxInstance, auth: Auth) => {
+export const createApi = (streamyx: StreamyxInstance, auth: Auth) => {
   const request = async (url: string, method: string = 'GET') => {
     streamyx.log.debug(`Getting data from ${url}...`);
     const response = await streamyx.http.fetch(url, {

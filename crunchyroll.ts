@@ -6,8 +6,8 @@ import type {
   PluginInstance,
 } from '@streamyx/plugin';
 import type { CrunchyrollPluginOptions } from './lib/types';
-import { useAuth } from './lib/auth';
-import { useApi } from './lib/api';
+import { createAuth } from './lib/auth';
+import { createApi } from './lib/api';
 import { DEVICE, ROUTES } from './lib/constants';
 
 const buildDrmRequestOptions = (assetId: string, accountId: string) => ({
@@ -23,8 +23,8 @@ const buildDrmRequestOptions = (assetId: string, accountId: string) => ({
 export const crunchyroll =
   (options: CrunchyrollPluginOptions) =>
   (streamyx: StreamyxInstance): PluginInstance => {
-    const auth = useAuth(streamyx, options.configPath);
-    const api = useApi(streamyx, auth);
+    const auth = createAuth(streamyx, options.configPath);
+    const api = createApi(streamyx, auth);
 
     const isValidUrl = (url: string) => new URL(url).host.includes('crunchyroll');
     const init = () => auth.signIn();
@@ -232,6 +232,6 @@ export const crunchyroll =
     };
   };
 
-export type CrunchyrollApi = ReturnType<typeof useApi>;
+export type CrunchyrollApi = ReturnType<typeof createApi>;
 
 export default crunchyroll;
