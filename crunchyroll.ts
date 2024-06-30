@@ -120,9 +120,9 @@ export const crunchyroll =
       const audioType = data.audioLocale?.slice(0, 2).toLowerCase();
       const assetId = url.split('assets/p/')[1]?.split('_,')[0] || data.assetId;
 
-      const config: DownloadConfig = {
+      const mediaInfo: MediaInfo = {
+        url,
         provider: 'CR',
-        manifestUrl: url,
         headers: {
           Authorization: `Bearer ${auth.state.accessToken}`,
           // 'X-Cr-Disable-Drm': 'true',
@@ -136,22 +136,22 @@ export const crunchyroll =
 
       const isMovie = !rawMetadata.episode_number;
       if (isMovie) {
-        config.movie = { title: sanitizeString(rawMetadata.series_title) };
+        mediaInfo.movie = { title: sanitizeString(rawMetadata.series_title) };
       } else {
-        config.show = { title: sanitizeString(rawMetadata.series_title) };
-        config.season = { number: rawMetadata.season_number };
-        config.episode = {
+        mediaInfo.show = { title: sanitizeString(rawMetadata.series_title) };
+        mediaInfo.season = { number: rawMetadata.season_number };
+        mediaInfo.episode = {
           number: rawMetadata.episode_number,
           title: sanitizeString(episode.title),
         };
       }
 
-      return config;
+      return mediaInfo;
     };
 
     const getEpisodesConfig = async (episodeIds: string[], args: RunArgs) => {
       const configQueue = episodeIds.map((episodeId: string) => getEpisodeConfig(episodeId, args));
-      const configList = (await Promise.all(configQueue)).filter(Boolean) as DownloadConfig[];
+      const configList = (await Promise.all(configQueue)).filter(Boolean) as MediaInfo[];
       return configList;
     };
 
@@ -205,7 +205,7 @@ export const crunchyroll =
       );
     };
 
-    const fetchMediaInfo = async (url: string, args: RunArgs): Promise<DownloadConfig[]> => {
+    const fetchMediaInfo = async (url: string, args: RunArgs): Promise<MediaInfo[]> => {
       const episodeId = url.split('watch/')[1]?.split('/')[0];
       const seriesId = url.split('series/')[1]?.split('/')[0];
       const mediaInfoList: MediaInfo[] = [];
