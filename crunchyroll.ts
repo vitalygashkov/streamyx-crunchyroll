@@ -1,9 +1,9 @@
 import type {
   StreamyxInstance,
-  DownloadConfig,
   DrmConfig,
   RunArgs,
   PluginInstance,
+  MediaInfo,
 } from '@streamyx/core';
 import type { CrunchyrollPluginOptions } from './lib/types';
 import { createAuth } from './lib/auth';
@@ -20,13 +20,15 @@ const buildDrmRequestOptions = (assetId: string, accountId: string) => ({
   }),
 });
 
+export type CrunchyrollApi = ReturnType<typeof createApi>;
+
 export const crunchyroll =
   (options: CrunchyrollPluginOptions) =>
   (streamyx: StreamyxInstance): PluginInstance<CrunchyrollApi> => {
     const auth = createAuth(streamyx, options.configPath);
     const api = createApi(streamyx, auth);
 
-    const isValidUrl = (url: string) => new URL(url).host.includes('crunchyroll');
+    const checkUrl = (url: string) => new URL(url).host.includes('crunchyroll');
     const init = () => auth.signIn();
 
     const getDrmConfig = async (assetId: string): Promise<DrmConfig> => {
@@ -203,10 +205,10 @@ export const crunchyroll =
       );
     };
 
-    const getConfigList = async (url: string, args: RunArgs): Promise<DownloadConfig[]> => {
+    const fetchMediaInfo = async (url: string, args: RunArgs): Promise<DownloadConfig[]> => {
       const episodeId = url.split('watch/')[1]?.split('/')[0];
       const seriesId = url.split('series/')[1]?.split('/')[0];
-      const configList: DownloadConfig[] = [];
+      const mediaInfoList: MediaInfo[] = [];
 
       const langs = [...args.languages];
       if (!langs.length) langs.push('ja-JP');
@@ -214,24 +216,20 @@ export const crunchyroll =
         args.languages = [lang];
         if (episodeId) {
           const episodeConfig = await getEpisodeConfig(episodeId, args);
-          if (episodeConfig) configList.push(episodeConfig);
+          if (episodeConfig) mediaInfoList.push(episodeConfig);
         } else if (seriesId) {
           const episodeConfigs = await getEpisodesConfigBySeries(seriesId, args);
-          configList.push(...episodeConfigs);
+          mediaInfoList.push(...episodeConfigs);
         }
       }
-      return configList;
+      return mediaInfoList;
     };
 
     return {
       name: 'crunchyroll',
       api: api as CrunchyrollApi,
-      isValidUrl,
       init,
-      getConfigList,
+      checkUrl,
+      fetchMediaInfo,
     };
   };
-
-export type CrunchyrollApi = ReturnType<typeof createApi>;
-
-export default crunchyroll;
