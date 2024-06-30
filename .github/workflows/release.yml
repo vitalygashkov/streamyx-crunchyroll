@@ -1,5 +1,8 @@
 name: Release
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
@@ -12,15 +15,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-          check-latest: true
-
-      - name: Install dependencies
+      - name: Install
         run: npm ci
+
+      - name: Run tests
+        run: npm run test
 
       - name: Get name and version from package.json
         run: |
@@ -35,6 +34,3 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: 'v${{ env.PACKAGE_VERSION }}'
           generate_release_notes: true
-
-permissions:
-  contents: write
