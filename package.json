@@ -7,7 +7,7 @@
   "main": "dist/crunchyroll.js",
   "types": "dist/crunchyroll.d.ts",
   "scripts": {
-    "prepare": "npm run build",
+    "postinstall": "npm run build",
     "build": "tsc -p tsconfig.json",
     "dev": "tsc --watch",
     "test": "vitest"
