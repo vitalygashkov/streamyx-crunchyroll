@@ -1,4 +1,4 @@
-import type { StreamyxInstance } from '@streamyx/core';
+import type { StreamyxCore } from '@streamyx/core';
 import type { AuthState, CmsAuthResponse } from './types';
 import { DEVICE, ROUTES } from './constants';
 
@@ -14,19 +14,19 @@ const buildRequestOptions = (params: Record<string, string>) => {
 
 const state: AuthState = {};
 
-export const createAuth = (streamyx: StreamyxInstance, storeFilePath: string) => {
+export const createAuth = (core: StreamyxCore, storeFilePath: string) => {
   const promptCredentials = async () => {
-    const username = await streamyx.prompt.waitForInput('Username');
-    const password = await streamyx.prompt.waitForInput('Password');
+    const username = await core.prompt.waitForInput('Username');
+    const password = await core.prompt.waitForInput('Password');
     return { username, password };
   };
 
   const fetchCmsAuth = async (accessToken: string) => {
     const requestOptions = { method: 'GET', headers: { authorization: `Bearer ${accessToken}` } };
-    const response = await streamyx.http.fetch(ROUTES.index, requestOptions);
+    const response = await core.http.fetch(ROUTES.index, requestOptions);
     if (response.status !== 200) {
-      streamyx.log.error(`Can't get CMS token. Status code: ${response.status}`);
-      streamyx.log.debug(await response.text());
+      core.log.error(`Can't get CMS token. Status code: ${response.status}`);
+      core.log.debug(await response.text());
       return;
     }
     return (await response.json()) as CmsAuthResponse;
@@ -36,18 +36,16 @@ export const createAuth = (streamyx: StreamyxInstance, storeFilePath: string) =>
     state,
 
     async loadState() {
-      streamyx.log.debug(`Loading auth state from ${storeFilePath}`);
-      const data = await streamyx.fs
-        .readJson<AuthState>(storeFilePath)
-        .catch<AuthState>(() => ({}));
-      streamyx.http.setHeader('authorization', `Bearer ${data.accessToken}`);
+      core.log.debug(`Loading auth state from ${storeFilePath}`);
+      const data = await core.fs.readJson<AuthState>(storeFilePath).catch<AuthState>(() => ({}));
+      core.http.setHeader('authorization', `Bearer ${data.accessToken}`);
       Object.assign(state, data);
       return data;
     },
 
     async saveState(data: AuthState) {
       Object.assign(state, data);
-      await streamyx.fs.writeJson(storeFilePath, data);
+      await core.fs.writeJson(storeFilePath, data);
     },
 
     checkToken() {
@@ -67,14 +65,14 @@ export const createAuth = (streamyx: StreamyxInstance, storeFilePath: string) =>
           device_id: deviceId,
           device_type: deviceType,
         });
-        const response = await streamyx.http.fetch(ROUTES.token, options);
+        const response = await core.http.fetch(ROUTES.token, options);
         const auth: any = await response.json();
         const error = auth.error || response.status !== 200;
         if (error) {
-          streamyx.log.error(
+          core.log.error(
             `Can't get token. Status code: ${response.status}. Message: ${auth.error}. Logging out...`
           );
-          streamyx.log.debug(JSON.stringify(auth));
+          core.log.debug(JSON.stringify(auth));
           await this.signOut();
           await this.signIn();
         } else {
@@ -87,17 +85,17 @@ export const createAuth = (streamyx: StreamyxInstance, storeFilePath: string) =>
             scope: auth.scope,
             country: auth.country,
             accountId: auth.account_id,
-            cookies: streamyx.http.headers.cookie,
+            cookies: core.http.headers.cookie,
             cmsAuth,
             deviceId,
             deviceType,
           };
-          streamyx.http.setHeader('authorization', `Bearer ${newState.accessToken}`);
+          core.http.setHeader('authorization', `Bearer ${newState.accessToken}`);
           await this.saveState(newState);
           return newState;
         }
       } catch (e: any) {
-        streamyx.log.debug(`Auth failed: ${e.message}`);
+        core.log.debug(`Auth failed: ${e.message}`);
         process.exit(1);
       }
     },
@@ -114,19 +112,19 @@ export const createAuth = (streamyx: StreamyxInstance, storeFilePath: string) =>
       await this.loadState();
       const { hasToken, isTokenExpired } = this.checkToken();
       if (!hasToken) {
-        streamyx.log.debug(`Requesting credentials`);
+        core.log.debug(`Requesting credentials`);
         const credentials =
           username && password ? { username, password } : await promptCredentials();
-        streamyx.log.debug(`Requesting token`);
+        core.log.debug(`Requesting token`);
         await this.fetchAccessToken(credentials.username, credentials.password);
       } else if (isTokenExpired) {
-        streamyx.log.debug(`Refreshing token`);
+        core.log.debug(`Refreshing token`);
         if (state.refreshToken) await this.fetchRefreshToken(state.refreshToken);
       }
     },
 
     async signOut() {
-      streamyx.http.setHeader('authorization', '');
+      core.http.setHeader('authorization', '');
       await this.saveState({
         accessToken: '',
         refreshToken: '',

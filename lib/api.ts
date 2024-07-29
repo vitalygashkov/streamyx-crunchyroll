@@ -1,12 +1,12 @@
-import type { StreamyxInstance } from '@streamyx/core';
+import type { StreamyxCore } from '@streamyx/core';
 import { type Auth } from './auth';
 import type { Cms } from './types';
 import { DEVICE, ROUTES } from './constants';
 
-export const createApi = (streamyx: StreamyxInstance, auth: Auth) => {
+export const createApi = (core: StreamyxCore, auth: Auth) => {
   const request = async (url: string, method: string = 'GET') => {
-    streamyx.log.debug(`Getting data from ${url}...`);
-    const response = await streamyx.http.fetch(url, {
+    core.log.debug(`Getting data from ${url}...`);
+    const response = await core.http.fetch(url, {
       method,
       headers: {
         authorization: `Bearer ${auth.state.accessToken}`,
@@ -14,16 +14,16 @@ export const createApi = (streamyx: StreamyxInstance, auth: Auth) => {
       },
     });
     const data = (await response.text()) || '';
-    response.status === 401 && streamyx.log.error(`Unauthorized: ${url}`);
-    response.status === 400 && streamyx.log.error(`Bad Request: ${url}`);
+    response.status === 401 && core.log.error(`Unauthorized: ${url}`);
+    response.status === 400 && core.log.error(`Bad Request: ${url}`);
     const isSuccess = response.status === 200;
-    if (!isSuccess) streamyx.log.debug(`Request failed. Route: ${url}. ${data}`);
+    if (!isSuccess) core.log.debug(`Request failed. Route: ${url}. ${data}`);
     try {
       return data ? JSON.parse(data) : data;
     } catch (e) {
-      streamyx.log.debug(data);
-      streamyx.log.debug(e);
-      streamyx.log.error(`Parsing JSON response failed. Route: ${url}`);
+      core.log.debug(data);
+      core.log.debug(e);
+      core.log.error(`Parsing JSON response failed. Route: ${url}`);
       process.exit(1);
     }
   };

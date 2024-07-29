@@ -1,10 +1,4 @@
-import type {
-  StreamyxInstance,
-  DrmConfig,
-  RunArgs,
-  PluginInstance,
-  MediaInfo,
-} from '@streamyx/core';
+import type { StreamyxCore, DrmConfig, RunArgs, PluginInstance, MediaInfo } from '@streamyx/core';
 import type { CrunchyrollPluginOptions } from './lib/types';
 import { createAuth } from './lib/auth';
 import { createApi } from './lib/api';
@@ -24,16 +18,16 @@ export type CrunchyrollApi = ReturnType<typeof createApi>;
 
 export const crunchyroll =
   (options: CrunchyrollPluginOptions) =>
-  (streamyx: StreamyxInstance): PluginInstance<CrunchyrollApi> => {
-    const auth = createAuth(streamyx, options.configPath);
-    const api = createApi(streamyx, auth);
+  (core: StreamyxCore): PluginInstance<CrunchyrollApi> => {
+    const auth = createAuth(core, options.configPath);
+    const api = createApi(core, auth);
 
     const checkUrl = (url: string) => new URL(url).host.includes('crunchyroll');
     const init = () => auth.signIn();
 
     const getDrmConfig = async (assetId: string): Promise<DrmConfig> => {
       const options = buildDrmRequestOptions(assetId, auth.state.accountId || '');
-      const response = await streamyx.http.fetch(ROUTES.drm, options);
+      const response = await core.http.fetch(ROUTES.drm, options);
       const data: any = await response.json();
       return {
         server: `https://lic.drmtoday.com/license-proxy-widevine/cenc/`,
@@ -68,10 +62,10 @@ export const crunchyroll =
       const object = await api.fetchObject(episodeId);
       const isError = object.__class__ === 'error';
       if (isError) {
-        const response = await streamyx.http.fetch('https://api.country.is').catch(() => null);
+        const response = await core.http.fetch('https://api.country.is').catch(() => null);
         const { ip, country } = await response?.json();
-        streamyx.log.info(`IP: ${ip}. Country: ${country}`);
-        return streamyx.log.error(
+        core.log.info(`IP: ${ip}. Country: ${country}`);
+        return core.log.error(
           `Episode ${episodeId} not found. Code: ${object.code}. Type: ${object.type}. `
         );
       }
@@ -96,7 +90,7 @@ export const crunchyroll =
         const versions = [defaultVersion, ...play.versions];
         const version = filterSeasonVersionsByAudio(versions, args.languages);
         if (!version) {
-          streamyx.log.warn(
+          core.log.warn(
             `No suitable version found for S${seasonNumberString}E${episodeNumberString}. Available audio: ${getAudioLocales(versions)}`
           );
         } else if (version.guid !== episodeId) {
@@ -112,7 +106,7 @@ export const crunchyroll =
             args.subtitleLanguages.some((lang: string) => hardsub.hlang.includes(lang));
           if (matchHardsubLang) url = hardsub.url;
         }
-        if (!url) return streamyx.log.warn(`No suitable hardsub stream found`);
+        if (!url) return core.log.warn(`No suitable hardsub stream found`);
         else data.url = url;
       }
 
@@ -159,7 +153,7 @@ export const crunchyroll =
       const response = await api.fetchSeriesSeasons(seriesId);
       const seasons = response.data;
       if (!seasons?.length) {
-        streamyx.log.error(`No seasons found`);
+        core.log.error(`No seasons found`);
         return [];
       }
 
@@ -186,7 +180,7 @@ export const crunchyroll =
               `S${s.season_number.toString().padStart(2, '0')} (${getAudioLocales(s.versions)})`
           )
           .join(', ');
-        streamyx.log.error(`No suitable episodes found. Available seasons: ${availableSeasons}`);
+        core.log.error(`No suitable episodes found. Available seasons: ${availableSeasons}`);
         return [];
       }
       const episodeIds = episodes.map((episode: any) => episode.id);

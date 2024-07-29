@@ -4,20 +4,31 @@
   "author": "Vitaly Gashkov <vitalygashkov@vk.com>",
   "description": "Crunchyroll plugin for Streamyx",
   "license": "AGPL-3.0",
-  "main": "dist/crunchyroll.js",
-  "types": "dist/crunchyroll.d.ts",
   "scripts": {
     "postinstall": "npm run build",
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsc --watch",
+    "build": "tsup crunchyroll.ts --format esm,cjs --dts",
+    "dev": "tsup crunchyroll.ts --watch",
     "test": "vitest"
   },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/crunchyroll.d.mts",
+        "default": "./dist/crunchyroll.mjs"
+      },
+      "require": {
+        "types": "./dist/crunchyroll.d.ts",
+        "default": "./dist/crunchyroll.js"
+      }
+    }
+  },
   "dependencies": {
-    "@streamyx/core": "^0.3.1"
+    "@streamyx/core": "^0.4.0"
   },
   "devDependencies": {
-    "@types/node": "^20.14.9",
-    "typescript": "^5.5.2",
-    "vitest": "^1.6.0"
+    "@types/node": "^22.0.0",
+    "tsup": "^8.2.3",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.4"
   }
 }

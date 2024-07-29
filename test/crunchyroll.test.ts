@@ -1,14 +1,13 @@
 import path from 'node:path';
 import { expect, test } from 'vitest';
-import { StreamyxInstance, fs, http, logger as log, prompt } from '@streamyx/core';
+import { create } from '@streamyx/core';
 import { crunchyroll } from '../crunchyroll';
-
-const streamyx: StreamyxInstance = { log, http, prompt, fs };
 
 const configPath = path.join(__dirname, './config.json');
 
 test('create plugin', () => {
-  const plugin = crunchyroll({ configPath })(streamyx);
+  const core = create(crunchyroll.name);
+  const plugin = crunchyroll({ configPath })(core);
   expect(plugin).toBeDefined();
   expect(plugin).toHaveProperty('name', 'crunchyroll');
   expect(plugin).toHaveProperty('api');
@@ -19,7 +18,8 @@ test('sign in', async () => {
   const username = '';
   const password = '';
   if (!username || !password) return; // Skip test if credentials are not provided
-  const plugin = crunchyroll({ configPath })(streamyx);
+  const core = create(crunchyroll.name);
+  const plugin = crunchyroll({ configPath })(core);
   await plugin.api.auth.signIn(username, password);
   console.log(plugin.api.auth.state);
   expect(plugin.api.auth.state.accessToken).toBeDefined();
