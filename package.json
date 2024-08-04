@@ -4,6 +4,9 @@
   "author": "Vitaly Gashkov <vitalygashkov@vk.com>",
   "description": "Crunchyroll plugin for Streamyx",
   "license": "AGPL-3.0",
+  "main": "dist/crunchyroll.js",
+  "module": "dist/crunchyroll.mjs",
+  "types": "dist/crunchyroll.d.ts",
   "scripts": {
     "postinstall": "npm run build",
     "build": "tsup crunchyroll.ts --format esm,cjs --dts",
