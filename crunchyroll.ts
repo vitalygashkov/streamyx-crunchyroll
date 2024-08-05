@@ -22,7 +22,6 @@ export const crunchyroll =
     const auth = createAuth(core, options.configPath);
     const api = createApi(core, auth);
 
-    const checkUrl = (url: string) => new URL(url).host.includes('crunchyroll');
     const init = () => auth.signIn();
 
     const getDrmConfig = async (assetId: string): Promise<DrmConfig> => {
@@ -223,7 +222,6 @@ export const crunchyroll =
       name: 'crunchyroll',
       api: api as CrunchyrollApi,
       init,
-      checkUrl,
       fetchMediaInfo,
     };
   };
