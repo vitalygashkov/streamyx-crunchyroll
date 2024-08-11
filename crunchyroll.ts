@@ -123,12 +123,12 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
 
     const mediaInfo: MediaInfo = {
       url,
-      provider: 'CR',
       headers: {
         Authorization: `Bearer ${auth.state.accessToken}`,
         // 'X-Cr-Disable-Drm': 'true',
         'User-Agent': DEVICE.userAgent,
       },
+      tag: 'CR',
       drmConfig: () => getDrmConfig(assetId),
       audioType,
       audioLanguage: data.audioLocale,
@@ -137,14 +137,12 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
 
     const isMovie = !rawMetadata.episode_number;
     if (isMovie) {
-      mediaInfo.movie = { title: sanitizeString(rawMetadata.series_title) };
+      mediaInfo.title = sanitizeString(rawMetadata.series_title);
     } else {
-      mediaInfo.show = { title: sanitizeString(rawMetadata.series_title) };
-      mediaInfo.season = { number: rawMetadata.season_number };
-      mediaInfo.episode = {
-        number: rawMetadata.episode_number,
-        title: sanitizeString(episode.title),
-      };
+      mediaInfo.title = sanitizeString(rawMetadata.series_title);
+      mediaInfo.seasonNumber = rawMetadata.season_number;
+      mediaInfo.episodeNumber = rawMetadata.episode_number;
+      mediaInfo.episodeTitle = sanitizeString(episode.title);
     }
 
     return mediaInfo;
