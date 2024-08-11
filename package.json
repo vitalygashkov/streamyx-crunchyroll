@@ -10,7 +10,7 @@
   "scripts": {
     "postinstall": "npm run build",
     "build": "tsup crunchyroll.ts --format esm,cjs --dts",
-    "dev": "tsup crunchyroll.ts --watch",
+    "dev": "tsx watch crunchyroll.ts",
     "test": "vitest"
   },
   "exports": {
@@ -26,12 +26,13 @@
     }
   },
   "dependencies": {
-    "@streamyx/core": "^1.0.0"
+    "@streamyx/core": "^1.1.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "tsup": "^8.2.3",
+    "@types/node": "^22.2.0",
+    "tsup": "^8.2.4",
+    "tsx": "^4.17.0",
     "typescript": "^5.5.4",
-    "vitest": "^2.0.4"
+    "vitest": "^2.0.5"
   }
 }
