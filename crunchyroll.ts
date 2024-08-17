@@ -4,6 +4,7 @@ import {
   type DrmConfig,
   type RunArgs,
   type MediaInfo,
+  type AsyncMediaInfo,
 } from '@streamyx/core';
 import type { CrunchyrollPluginOptions } from './lib/types';
 import { createAuth } from './lib/auth';
@@ -61,14 +62,14 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
       .join(', ')
       .trim();
 
-  const getEpisodeConfig = async (episodeId: string, args: RunArgs) => {
+  const getEpisodeConfig = async (episodeId: string, args: RunArgs): Promise<MediaInfo> => {
     const object = await api.fetchObject(episodeId);
     const isError = object.__class__ === 'error';
     if (isError) {
       const response = await core.http.fetch('https://api.country.is').catch(() => null);
       const { ip, country } = await response?.json();
       core.log.info(`IP: ${ip}. Country: ${country}`);
-      return core.log.error(
+      throw new Error(
         `Episode ${episodeId} not found. Code: ${object.code}. Type: ${object.type}. `
       );
     }
@@ -78,6 +79,14 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
     const episodeNumberString = rawMetadata.episode_number?.toString().padEnd(2, '0') || '?';
 
     const play = await api.fetchPlayData(episodeId);
+
+    if (play.error === 'TOO_MANY_ACTIVE_STREAMS') {
+      core.log.warn(`Too many active streams. Revoking all active streams...`);
+      for (const activeStream of play.activeStreams) {
+        await api.revokePlayData(activeStream.contentId, activeStream.token);
+      }
+    }
+
     const subtitles: any[] = [];
     for (const subtitle of Object.values(play.subtitles) as any[]) {
       const containsSelectedSubtitles =
@@ -113,7 +122,7 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
           args.subtitleLanguages.some((lang: string) => hardsub.hlang.includes(lang));
         if (matchHardsubLang) url = hardsub.url;
       }
-      if (!url) return core.log.warn(`No suitable hardsub stream found`);
+      if (!url) core.log.warn(`No suitable hardsub stream found`);
       else data.url = url;
     }
 
@@ -133,6 +142,7 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
       audioType,
       audioLanguage: data.audioLocale,
       subtitles,
+      onDownloadFinished: () => api.revokePlayData(episodeId, data.token),
     };
 
     const isMovie = !rawMetadata.episode_number;
@@ -148,13 +158,7 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
     return mediaInfo;
   };
 
-  const getEpisodesConfig = async (episodeIds: string[], args: RunArgs) => {
-    const configQueue = episodeIds.map((episodeId: string) => getEpisodeConfig(episodeId, args));
-    const configList = (await Promise.all(configQueue)).filter(Boolean) as MediaInfo[];
-    return configList;
-  };
-
-  const getEpisodesConfigBySeries = async (seriesId: string, args: RunArgs) => {
+  const getEpisodeIdsBySeries = async (seriesId: string, args: RunArgs) => {
     const response = await api.fetchSeriesSeasons(seriesId);
     const seasons = response.data;
     if (!seasons?.length) {
@@ -189,7 +193,7 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
       return [];
     }
     const episodeIds = episodes.map((episode: any) => episode.id);
-    return getEpisodesConfig(episodeIds, args);
+    return episodeIds;
   };
 
   const filterSeasonsByNumber = (seasons: any, selectedSeasons: RunArgs['episodes']) => {
@@ -211,18 +215,18 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
     fetchMediaInfo: async (url, args) => {
       const episodeId = url.split('watch/')[1]?.split('/')[0];
       const seriesId = url.split('series/')[1]?.split('/')[0];
-      const mediaInfoList: MediaInfo[] = [];
-
+      const mediaInfoList: (MediaInfo | AsyncMediaInfo)[] = [];
       const langs = [...args.languages];
       if (!langs.length) langs.push('ja-JP');
       for (const lang of langs) {
         args.languages = [lang];
         if (episodeId) {
-          const episodeConfig = await getEpisodeConfig(episodeId, args);
-          if (episodeConfig) mediaInfoList.push(episodeConfig);
+          mediaInfoList.push(() => getEpisodeConfig(episodeId, args));
         } else if (seriesId) {
-          const episodeConfigs = await getEpisodesConfigBySeries(seriesId, args);
-          mediaInfoList.push(...episodeConfigs);
+          const episodeIds = await getEpisodeIdsBySeries(seriesId, args);
+          for (const episodeId of episodeIds) {
+            mediaInfoList.push(() => getEpisodeConfig(episodeId, args));
+          }
         }
       }
       return mediaInfoList;
