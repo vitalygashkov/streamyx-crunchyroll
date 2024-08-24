@@ -16,8 +16,10 @@ const state: AuthState = {};
 
 export const createAuth = (core: StreamyxCore, storeFilePath: string) => {
   const promptCredentials = async () => {
-    const username = await core.prompt.waitForInput('Username');
-    const password = await core.prompt.waitForInput('Password');
+    const { username, password } = await core.prompt.ask({
+      username: { label: 'Username' },
+      password: { label: 'Password' },
+    });
     return { username, password };
   };
 
