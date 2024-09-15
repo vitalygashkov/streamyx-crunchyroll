@@ -10,7 +10,7 @@ test('register service', () => {
   expect(service).toBeDefined();
   expect(service).toHaveProperty('name', 'crunchyroll');
   expect(service).toHaveProperty('api');
-  expect(service).toHaveProperty('fetchMediaInfo');
+  expect(service).toHaveProperty('fetchContentMetadata');
 });
 
 test('sign in', async () => {
