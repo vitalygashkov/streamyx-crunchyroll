@@ -3,8 +3,8 @@ import {
   type StreamyxCore,
   type DrmConfig,
   type RunArgs,
-  type MediaInfo,
-  type AsyncMediaInfo,
+  ContentMetadata,
+  ContentSource,
 } from '@streamyx/core';
 import type { CrunchyrollPluginOptions } from './lib/types';
 import { createAuth } from './lib/auth';
@@ -62,7 +62,7 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
       .join(', ')
       .trim();
 
-  const getEpisodeConfig = async (episodeId: string, args: RunArgs): Promise<MediaInfo> => {
+  const getEpisodeMetadata = async (episodeId: string, args: RunArgs): Promise<ContentMetadata> => {
     const object = await api.fetchObject(episodeId);
     const isError = object.__class__ === 'error';
     if (isError) {
@@ -75,9 +75,21 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
     }
     const episode = object.items[0];
     const rawMetadata = episode.episode_metadata;
-    const seasonNumberString = rawMetadata.season_number?.toString().padEnd(2, '0') || '?';
-    const episodeNumberString = rawMetadata.episode_number?.toString().padEnd(2, '0') || '?';
 
+    const isMovie = !rawMetadata.episode_number;
+    if (isMovie) {
+      return { title: sanitizeString(rawMetadata.series_title) };
+    } else {
+      return {
+        title: sanitizeString(rawMetadata.series_title),
+        seasonNumber: rawMetadata.season_number,
+        episodeNumber: rawMetadata.episode_number,
+        episodeTitle: sanitizeString(episode.title),
+      };
+    }
+  };
+
+  const getEpisodeSource = async (episodeId: string, args: RunArgs) => {
     const play = await api.fetchPlayData(episodeId);
 
     if (play.error === 'TOO_MANY_ACTIVE_STREAMS') {
@@ -107,7 +119,7 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
       const version = filterSeasonVersionsByAudio(versions, args.languages);
       if (!version) {
         core.log.warn(
-          `No suitable version found for S${seasonNumberString}E${episodeNumberString}. Available audio: ${getAudioLocales(versions)}`
+          `No suitable version found for episode #${episodeId}. Available audio: ${getAudioLocales(versions)}`
         );
       } else if (version.guid !== episodeId) {
         data = await api.fetchPlayData(version.guid);
@@ -130,30 +142,21 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
     const audioType = data.audioLocale?.slice(0, 2).toLowerCase();
     const assetId = url.split('assets/p/')[1]?.split('_,')[0] || data.assetId;
 
-    const mediaInfo: MediaInfo = {
+    const mediaInfo: ContentSource = {
       url,
       headers: {
         Authorization: `Bearer ${auth.state.accessToken}`,
         // 'X-Cr-Disable-Drm': 'true',
         'User-Agent': DEVICE.userAgent,
       },
-      tag: 'CR',
-      drmConfig: () => getDrmConfig(assetId),
+      drm: { payload: { assetId } },
       audioType,
       audioLanguage: data.audioLocale,
       subtitles,
-      onDownloadFinished: () => api.revokePlayData(episodeId, data.token),
-    };
 
-    const isMovie = !rawMetadata.episode_number;
-    if (isMovie) {
-      mediaInfo.title = sanitizeString(rawMetadata.series_title);
-    } else {
-      mediaInfo.title = sanitizeString(rawMetadata.series_title);
-      mediaInfo.seasonNumber = rawMetadata.season_number;
-      mediaInfo.episodeNumber = rawMetadata.episode_number;
-      mediaInfo.episodeTitle = sanitizeString(episode.title);
-    }
+      // TODO: Try to revoke using some timeout
+      // onDownloadFinished: () => api.revokePlayData(episodeId, data.token),
+    };
 
     return mediaInfo;
   };
@@ -210,26 +213,39 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
 
   return {
     name: 'crunchyroll',
+    tag: 'CR',
     api: api as CrunchyrollApi,
     init,
-    fetchMediaInfo: async (url, args) => {
+
+    fetchContentMetadata: async (url, args) => {
       const episodeId = url.split('watch/')[1]?.split('/')[0];
       const seriesId = url.split('series/')[1]?.split('/')[0];
-      const mediaInfoList: (MediaInfo | AsyncMediaInfo)[] = [];
+      const results: ContentMetadata[] = [];
       const langs = [...args.languages];
       if (!langs.length) langs.push('ja-JP');
       for (const lang of langs) {
         args.languages = [lang];
         if (episodeId) {
-          mediaInfoList.push(() => getEpisodeConfig(episodeId, args));
+          const episodeMetadata = await getEpisodeMetadata(episodeId, args);
+          results.push(episodeMetadata);
         } else if (seriesId) {
           const episodeIds = await getEpisodeIdsBySeries(seriesId, args);
           for (const episodeId of episodeIds) {
-            mediaInfoList.push(() => getEpisodeConfig(episodeId, args));
+            const episodeMetadata = await getEpisodeMetadata(episodeId, args);
+            results.push(episodeMetadata);
           }
         }
       }
-      return mediaInfoList;
+      return results;
+    },
+
+    fetchContentSource: async (contentId, args) => {
+      const episodeSource = await getEpisodeSource(contentId, args);
+      return episodeSource;
+    },
+
+    fetchContentDrm: async ({ assetId }) => {
+      return getDrmConfig(assetId);
     },
   };
 });
