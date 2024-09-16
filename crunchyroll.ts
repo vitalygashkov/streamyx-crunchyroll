@@ -46,12 +46,9 @@ export default defineService(() => (core) => {
   };
 
   const filterSeasonVersionsByAudio = (versions: any, selectedAudioLangs: string[] = []) => {
-    const matchLang = (version: any) =>
-      selectedAudioLangs.some((lang) => version.audio_locale.startsWith(lang));
+    const matchLang = (version: any) => selectedAudioLangs.some((lang) => version.audio_locale.startsWith(lang));
     const matchOriginal = (version: any) => !!version.original;
-    const result = selectedAudioLangs.length
-      ? versions.find(matchLang)
-      : versions.find(matchOriginal) || versions[0];
+    const result = selectedAudioLangs.length ? versions.find(matchLang) : versions.find(matchOriginal) || versions[0];
     return result;
   };
 
@@ -68,9 +65,7 @@ export default defineService(() => (core) => {
       const response = await core.http.fetch('https://api.country.is').catch(() => null);
       const { ip, country } = await response?.json();
       core.log.info(`IP: ${ip}. Country: ${country}`);
-      throw new Error(
-        `Episode ${episodeId} not found. Code: ${object.code}. Type: ${object.type}. `
-      );
+      throw new Error(`Episode ${episodeId} not found. Code: ${object.code}. Type: ${object.type}. `);
     }
     const episode = object.items[0];
     const rawMetadata = episode.episode_metadata;
@@ -129,8 +124,7 @@ export default defineService(() => (core) => {
       let url: string = '';
       for (const hardsub of Object.values(data.hardSubs) as any[]) {
         const matchHardsubLang =
-          !args.subtitleLanguages.length ||
-          args.subtitleLanguages.some((lang: string) => hardsub.hlang.includes(lang));
+          !args.subtitleLanguages.length || args.subtitleLanguages.some((lang: string) => hardsub.hlang.includes(lang));
         if (matchHardsubLang) url = hardsub.url;
       }
       if (!url) core.log.warn(`No suitable hardsub stream found`);
@@ -183,31 +177,19 @@ export default defineService(() => (core) => {
         .catch(() => []);
     });
     const allEpisodes = (await Promise.all(episodesQueue)).flat();
-    const episodes = filterEpisodesByNumber(allEpisodes, args.episodes);
+    const eps = core.utils.extendEpisodes(args.episodes);
+    const episodes = eps.items.size
+      ? allEpisodes
+      : allEpisodes.filter((episode: any) => eps.has(episode.episode_number, episode.season_number));
     if (!episodes?.length) {
       const availableSeasons = seasons
-        .map(
-          (s: any) =>
-            `S${s.season_number.toString().padStart(2, '0')} (${getAudioLocales(s.versions)})`
-        )
+        .map((s: any) => `S${s.season_number.toString().padStart(2, '0')} (${getAudioLocales(s.versions)})`)
         .join(', ');
       core.log.error(`No suitable episodes found. Available seasons: ${availableSeasons}`);
       return [];
     }
     const episodeIds = episodes.map((episode: any) => episode.id);
     return episodeIds;
-  };
-
-  const filterSeasonsByNumber = (seasons: any, selectedSeasons: RunArgs['episodes']) => {
-    if (!selectedSeasons.size) return seasons;
-    return seasons.filter((season: any) => selectedSeasons.has(NaN, season.season_number));
-  };
-
-  const filterEpisodesByNumber = (seasonEpisodes: any, selectedEpisodes: RunArgs['episodes']) => {
-    if (!selectedEpisodes.size) return seasonEpisodes;
-    return seasonEpisodes.filter((episode: any) =>
-      selectedEpisodes.has(episode.episode_number, episode.season_number)
-    );
   };
 
   return {
