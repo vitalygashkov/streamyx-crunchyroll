@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { expect, test } from 'vitest';
 import { registerService } from '@streamyx/core';
 import crunchyroll from '../crunchyroll';
@@ -18,7 +17,7 @@ test('sign in', async () => {
   const service = registerService(crunchyroll);
   const api = service.api!;
   await api.auth.signIn(username, password);
-  console.log(api.auth.state);
-  expect(api.auth.state.accessToken).toBeDefined();
+  console.log(service.core.store.state);
+  expect(service.core.store.state.accessToken).toBeDefined();
   await api.auth.signOut();
 });
