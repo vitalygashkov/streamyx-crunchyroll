@@ -9,7 +9,7 @@ export const createApi = (core: StreamyxCore, auth: Auth) => {
     const response = await core.http.fetch(url, {
       method,
       headers: {
-        authorization: `Bearer ${auth.state.accessToken}`,
+        authorization: `Bearer ${core.store.state.accessToken}`,
         'User-Agent': DEVICE.userAgent,
       },
     });
@@ -28,7 +28,7 @@ export const createApi = (core: StreamyxCore, auth: Auth) => {
     }
   };
 
-  const getCms = () => (auth.state.cmsAuth?.cms || {}) as Cms;
+  const getCms = () => (core.store.state.cmsAuth?.cms || {}) as Cms;
 
   const getSign = (cms = getCms()) => ({
     Policy: cms.policy,
