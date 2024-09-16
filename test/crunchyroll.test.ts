@@ -3,10 +3,8 @@ import { expect, test } from 'vitest';
 import { registerService } from '@streamyx/core';
 import crunchyroll from '../crunchyroll';
 
-const configPath = path.join(__dirname, './config.json');
-
 test('register service', () => {
-  const service = registerService(crunchyroll, { configPath });
+  const service = registerService(crunchyroll);
   expect(service).toBeDefined();
   expect(service).toHaveProperty('name', 'crunchyroll');
   expect(service).toHaveProperty('api');
