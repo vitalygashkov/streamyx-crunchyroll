@@ -6,7 +6,6 @@ import {
   ContentMetadata,
   ContentSource,
 } from '@streamyx/core';
-import type { CrunchyrollPluginOptions } from './lib/types';
 import { createAuth } from './lib/auth';
 import { createApi } from './lib/api';
 import { DEVICE, ROUTES } from './lib/constants';
@@ -23,14 +22,14 @@ const buildDrmRequestOptions = (assetId: string, accountId: string) => ({
 
 export type CrunchyrollApi = ReturnType<typeof createApi>;
 
-export default defineService((options: CrunchyrollPluginOptions) => (core) => {
-  const auth = createAuth(core, options.configPath);
+export default defineService(() => (core) => {
+  const auth = createAuth(core);
   const api = createApi(core, auth);
 
   const init = () => auth.signIn();
 
   const getDrmConfig = async (assetId: string): Promise<DrmConfig> => {
-    const options = buildDrmRequestOptions(assetId, auth.state.accountId || '');
+    const options = buildDrmRequestOptions(assetId, core.store.state.accountId || '');
     const response = await core.http.fetch(ROUTES.drm, options);
     const data: any = await response.json();
     return {
@@ -145,7 +144,7 @@ export default defineService((options: CrunchyrollPluginOptions) => (core) => {
     const mediaInfo: ContentSource = {
       url,
       headers: {
-        Authorization: `Bearer ${auth.state.accessToken}`,
+        Authorization: `Bearer ${core.store.state.accessToken}`,
         // 'X-Cr-Disable-Drm': 'true',
         'User-Agent': DEVICE.userAgent,
       },

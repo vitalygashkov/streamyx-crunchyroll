@@ -12,9 +12,7 @@ const buildRequestOptions = (params: Record<string, string>) => {
   return { method: 'POST', body: new URLSearchParams(params).toString(), headers: HEADERS };
 };
 
-const state: AuthState = {};
-
-export const createAuth = (core: StreamyxCore, storeFilePath: string) => {
+export const createAuth = (core: StreamyxCore) => {
   const promptCredentials = async () => {
     const { username, password } = await core.prompt.ask({
       username: { label: 'Username' },
@@ -35,32 +33,21 @@ export const createAuth = (core: StreamyxCore, storeFilePath: string) => {
   };
 
   return {
-    state,
-
-    async loadState() {
-      core.log.debug(`Loading auth state from ${storeFilePath}`);
-      const data = await core.fs.readJson<AuthState>(storeFilePath).catch<AuthState>(() => ({}));
-      core.http.setHeader('authorization', `Bearer ${data.accessToken}`);
-      Object.assign(state, data);
-      return data;
-    },
-
-    async saveState(data: AuthState) {
-      Object.assign(state, data);
-      await core.fs.writeJson(storeFilePath, data);
-    },
-
     checkToken() {
       const TIME_MARGIN = 60000;
-      const hasToken = !!state.accessToken && !!state.refreshToken && !!state.cmsAuth?.cms;
-      const isTokenExpired = hasToken && Number(state.expires) - TIME_MARGIN < new Date().getTime();
+      const hasToken =
+        !!core.store.state.accessToken &&
+        !!core.store.state.refreshToken &&
+        !!core.store.state.cmsAuth?.cms;
+      const isTokenExpired =
+        hasToken && Number(core.store.state.expires) - TIME_MARGIN < new Date().getTime();
       return { hasToken, isTokenExpired };
     },
 
     async fetchToken(params: Record<string, string>) {
       try {
-        const deviceId = state.deviceId || DEVICE.id;
-        const deviceType = state.deviceType || DEVICE.type;
+        const deviceId = core.store.state.deviceId || DEVICE.id;
+        const deviceType = core.store.state.deviceType || DEVICE.type;
         const options = buildRequestOptions({
           ...params,
           scope: 'offline_access',
@@ -93,7 +80,7 @@ export const createAuth = (core: StreamyxCore, storeFilePath: string) => {
             deviceType,
           };
           core.http.setHeader('authorization', `Bearer ${newState.accessToken}`);
-          await this.saveState(newState);
+          await core.store.setState(newState);
           return newState;
         }
       } catch (e: any) {
@@ -111,7 +98,8 @@ export const createAuth = (core: StreamyxCore, storeFilePath: string) => {
     },
 
     async signIn(username?: string, password?: string) {
-      await this.loadState();
+      await core.store.getState();
+      core.http.setHeader('authorization', `Bearer ${core.store.state.accessToken}`);
       const { hasToken, isTokenExpired } = this.checkToken();
       if (!hasToken) {
         core.log.debug(`Requesting credentials`);
@@ -121,13 +109,14 @@ export const createAuth = (core: StreamyxCore, storeFilePath: string) => {
         await this.fetchAccessToken(credentials.username, credentials.password);
       } else if (isTokenExpired) {
         core.log.debug(`Refreshing token`);
-        if (state.refreshToken) await this.fetchRefreshToken(state.refreshToken);
+        if (core.store.state.refreshToken)
+          await this.fetchRefreshToken(core.store.state.refreshToken);
       }
     },
 
     async signOut() {
       core.http.setHeader('authorization', '');
-      await this.saveState({
+      await core.store.setState({
         accessToken: '',
         refreshToken: '',
         expires: 0,
