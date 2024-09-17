@@ -2,7 +2,7 @@ import {
   defineService,
   type StreamyxCore,
   type DrmConfig,
-  type RunArgs,
+  type Options,
   ContentMetadata,
   ContentSource,
 } from '@streamyx/core';
@@ -46,9 +46,12 @@ export default defineService(() => (core) => {
   };
 
   const filterSeasonVersionsByAudio = (versions: any, selectedAudioLangs: string[] = []) => {
-    const matchLang = (version: any) => selectedAudioLangs.some((lang) => version.audio_locale.startsWith(lang));
+    const matchLang = (version: any) =>
+      selectedAudioLangs.some((lang) => version.audio_locale.startsWith(lang));
     const matchOriginal = (version: any) => !!version.original;
-    const result = selectedAudioLangs.length ? versions.find(matchLang) : versions.find(matchOriginal) || versions[0];
+    const result = selectedAudioLangs.length
+      ? versions.find(matchLang)
+      : versions.find(matchOriginal) || versions[0];
     return result;
   };
 
@@ -58,14 +61,16 @@ export default defineService(() => (core) => {
       .join(', ')
       .trim();
 
-  const getEpisodeMetadata = async (episodeId: string, args: RunArgs): Promise<ContentMetadata> => {
+  const getEpisodeMetadata = async (episodeId: string, args: Options): Promise<ContentMetadata> => {
     const object = await api.fetchObject(episodeId);
     const isError = object.__class__ === 'error';
     if (isError) {
       const response = await core.http.fetch('https://api.country.is').catch(() => null);
       const { ip, country } = await response?.json();
       core.log.info(`IP: ${ip}. Country: ${country}`);
-      throw new Error(`Episode ${episodeId} not found. Code: ${object.code}. Type: ${object.type}. `);
+      throw new Error(
+        `Episode ${episodeId} not found. Code: ${object.code}. Type: ${object.type}. `
+      );
     }
     const episode = object.items[0];
     const rawMetadata = episode.episode_metadata;
@@ -83,7 +88,7 @@ export default defineService(() => (core) => {
     }
   };
 
-  const getEpisodeSource = async (episodeId: string, args: RunArgs) => {
+  const getEpisodeSource = async (episodeId: string, args: Options) => {
     const play = await api.fetchPlayData(episodeId);
 
     if (play.error === 'TOO_MANY_ACTIVE_STREAMS') {
@@ -124,7 +129,8 @@ export default defineService(() => (core) => {
       let url: string = '';
       for (const hardsub of Object.values(data.hardSubs) as any[]) {
         const matchHardsubLang =
-          !args.subtitleLanguages.length || args.subtitleLanguages.some((lang: string) => hardsub.hlang.includes(lang));
+          !args.subtitleLanguages?.length ||
+          args.subtitleLanguages?.some((lang: string) => hardsub.hlang.includes(lang));
         if (matchHardsubLang) url = hardsub.url;
       }
       if (!url) core.log.warn(`No suitable hardsub stream found`);
@@ -154,7 +160,7 @@ export default defineService(() => (core) => {
     return mediaInfo;
   };
 
-  const getEpisodeIdsBySeries = async (seriesId: string, args: RunArgs) => {
+  const getEpisodeIdsBySeries = async (seriesId: string, args: Options) => {
     const response = await api.fetchSeriesSeasons(seriesId);
     const seasons = response.data;
     if (!seasons?.length) {
@@ -177,13 +183,18 @@ export default defineService(() => (core) => {
         .catch(() => []);
     });
     const allEpisodes = (await Promise.all(episodesQueue)).flat();
-    const eps = core.utils.extendEpisodes(args.episodes);
+    const eps = core.utils.extendEpisodes(args.episodes || new Map());
     const episodes = eps.items.size
       ? allEpisodes
-      : allEpisodes.filter((episode: any) => eps.has(episode.episode_number, episode.season_number));
+      : allEpisodes.filter((episode: any) =>
+          eps.has(episode.episode_number, episode.season_number)
+        );
     if (!episodes?.length) {
       const availableSeasons = seasons
-        .map((s: any) => `S${s.season_number.toString().padStart(2, '0')} (${getAudioLocales(s.versions)})`)
+        .map(
+          (s: any) =>
+            `S${s.season_number.toString().padStart(2, '0')} (${getAudioLocales(s.versions)})`
+        )
         .join(', ');
       core.log.error(`No suitable episodes found. Available seasons: ${availableSeasons}`);
       return [];
