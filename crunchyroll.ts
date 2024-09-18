@@ -213,7 +213,7 @@ export default defineService(() => (core) => {
       const episodeId = url.split('watch/')[1]?.split('/')[0];
       const seriesId = url.split('series/')[1]?.split('/')[0];
       const results: ContentMetadata[] = [];
-      const langs = [...args.languages];
+      const langs = structuredClone(args.languages || []);
       if (!langs.length) langs.push('ja-JP');
       for (const lang of langs) {
         args.languages = [lang];
